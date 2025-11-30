@@ -313,6 +313,19 @@ button {
   justify-content: center;
 }
 
+.date-picker-month {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.date-picker-month-title {
+  text-align: center;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
 .date-picker-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -330,7 +343,7 @@ button {
 .date-picker-day {
   width: 100%;
   aspect-ratio: 1 / 1;
-  border-radius: 12px;
+  border-radius: 10px;
   border: none;
   background: transparent;
   color: #e2e8f0;
@@ -338,6 +351,9 @@ button {
   cursor: pointer;
   position: relative;
   transition: background 0.15s ease, color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .date-picker-day:focus-visible {
@@ -357,25 +373,42 @@ button {
   cursor: not-allowed;
 }
 
-.date-picker-day-in-range {
-  background: rgba(56, 189, 248, 0.2);
-  color: #e2e8f0;
+.date-picker-day-label {
+  position: relative;
+  z-index: 2;
+}
+
+.date-picker-day::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+
+.date-picker-day-range::before {
+  background: rgba(56, 189, 248, 0.18);
 }
 
 .date-picker-day-start,
 .date-picker-day-end {
-  background: var(--color-accent);
+  border-radius: 999px;
   color: #0f172a;
 }
 
-.date-picker-day-start {
-  border-top-left-radius: 50%;
-  border-bottom-left-radius: 50%;
+.date-picker-day-start::before,
+.date-picker-day-end::before {
+  background: var(--color-accent);
 }
 
-.date-picker-day-end {
-  border-top-right-radius: 50%;
-  border-bottom-right-radius: 50%;
+.date-picker-day-start::after,
+.date-picker-day-end::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(15, 23, 42, 0.15);
 }
 
 .accent-chip {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  addDays,
   addMonths,
   endOfMonth,
   endOfQuarter,
@@ -26,10 +27,7 @@ const today = new Date();
 const clampToToday = (date: Date) => (isAfter(date, today) ? today : date);
 
 const presets = [
-  {
-    label: 'Today',
-    getRange: () => ({ start: today, end: today }),
-  },
+  { label: 'Today', getRange: () => ({ start: today, end: today }) },
   {
     label: 'This Week',
     getRange: () => {
@@ -38,10 +36,7 @@ const presets = [
       return { start, end };
     },
   },
-  {
-    label: 'This Month',
-    getRange: () => ({ start: startOfMonth(today), end: clampToToday(endOfMonth(today)) }),
-  },
+  { label: 'This Month', getRange: () => ({ start: startOfMonth(today), end: clampToToday(endOfMonth(today)) }) },
   {
     label: 'Last 30 Days',
     getRange: () => ({ start: new Date(today.getTime() - 29 * 86400000), end: today }),
@@ -53,109 +48,109 @@ const presets = [
       return { start: startOfMonth(previousMonth), end: endOfMonth(previousMonth) };
     },
   },
-  {
-    label: 'This Quarter',
-    getRange: () => ({ start: startOfQuarter(today), end: clampToToday(endOfQuarter(today)) }),
-  },
-  {
-    label: 'Year To Date',
-    getRange: () => ({ start: new Date(today.getFullYear(), 0, 1), end: today }),
-  },
-  {
-    label: 'All Time',
-    getRange: () => ({ start: null, end: null }),
-  },
+  { label: 'This Quarter', getRange: () => ({ start: startOfQuarter(today), end: clampToToday(endOfQuarter(today)) }) },
+  { label: 'Year To Date', getRange: () => ({ start: new Date(today.getFullYear(), 0, 1), end: today }) },
+  { label: 'All Time', getRange: () => ({ start: null, end: null }) },
 ];
 
 const formatValue = (date: Date | null) => (date ? format(date, 'yyyy-MM-dd') : null);
 
-const buildWeeks = (month: Date) => {
-  const start = startOfWeek(startOfMonth(month), { weekStartsOn: 0 });
-  const end = endOfWeek(endOfMonth(month), { weekStartsOn: 0 });
-  const days: Date[] = [];
-  let current = start;
-  while (!isAfter(current, end)) {
-    days.push(current);
-    current = new Date(current.getTime() + 86400000);
-  }
-  return days;
+const generateCalendarMatrix = (month: Date) => {
+  const start = startOfMonth(month);
+  const startDay = start.getDay();
+  const matrixStart = addDays(start, -startDay);
+  return Array.from({ length: 42 }).map((_, index) => {
+    const date = addDays(matrixStart, index);
+    return { date, currentMonth: date.getMonth() === month.getMonth() };
+  });
 };
 
 const DateRangePicker = ({ initialRange, onClose, onApply }: DateRangePickerProps) => {
   const [currentMonth, setCurrentMonth] = useState(
     startOfMonth(initialRange.start ? parseISO(initialRange.start) : today)
   );
-  const [range, setRange] = useState<{ start: Date | null; end: Date | null }>(() => ({
+  const [selection, setSelection] = useState<{ start: Date | null; end: Date | null }>(() => ({
     start: initialRange.start ? parseISO(initialRange.start) : null,
     end: initialRange.end ? parseISO(initialRange.end) : null,
   }));
 
   const handleDayClick = (day: Date) => {
     if (isAfter(day, today)) return;
-    if (!range.start || (range.start && range.end)) {
-      setRange({ start: day, end: null });
+    if (!selection.start || (selection.start && selection.end)) {
+      setSelection({ start: day, end: null });
       return;
     }
-    if (range.start && !range.end) {
-      if (isBefore(day, range.start)) {
-        setRange({ start: day, end: range.start });
+    if (selection.start && !selection.end) {
+      if (isBefore(day, selection.start)) {
+        setSelection({ start: day, end: selection.start });
+      } else if (isSameDay(day, selection.start)) {
+        setSelection({ start: day, end: null });
       } else {
-        setRange({ start: range.start, end: day });
+        setSelection({ start: selection.start, end: day });
       }
     }
   };
 
   const handleApply = () => {
-    onApply({ start: formatValue(range.start), end: formatValue(range.end) });
+    onApply({ start: formatValue(selection.start), end: formatValue(selection.end) });
     onClose();
   };
 
   const handleClear = () => {
-    setRange({ start: null, end: null });
+    setSelection({ start: null, end: null });
   };
 
+  const normalize = (value: Date | null) =>
+    value ? new Date(value.getFullYear(), value.getMonth(), value.getDate()) : null;
+
   const renderMonth = (month: Date) => {
-    const days = buildWeeks(month);
+    const days = generateCalendarMatrix(month);
+    const startDate = normalize(selection.start);
+    const endDate = normalize(selection.end);
+    const startMs = startDate ? startDate.getTime() : null;
+    const endMs = endDate ? endDate.getTime() : null;
+
     return (
-      <div style={{ width: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}>
-          <strong>{format(month, 'MMMM yyyy')}</strong>
-        </div>
+      <div className="date-picker-month">
+        <div className="date-picker-month-title">{format(month, 'MMMM yyyy')}</div>
         <div className="date-picker-grid">
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
-            <div key={day} className="date-picker-weekday">
+            <div key={`${month.toISOString()}-${day}`} className="date-picker-weekday">
               {day}
             </div>
           ))}
-          {days.map((day) => {
-            const disabled = isAfter(day, today);
-            const isSelectedStart = range.start && isSameDay(range.start, day);
-            const isSelectedEnd = range.end && isSameDay(range.end, day);
+          {days.map(({ date, currentMonth }) => {
+            const normalized = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            const dayMs = normalized.getTime();
+            const disabled = isAfter(date, today);
+            const isStart = startMs !== null && dayMs === startMs;
+            const isEnd = endMs !== null && dayMs === endMs;
             const inRange =
-              range.start &&
-              range.end &&
-              (isAfter(day, range.start) || isSameDay(day, range.start)) &&
-              (isBefore(day, range.end) || isSameDay(day, range.end));
-            const outMonth = day.getMonth() !== month.getMonth();
+              startMs !== null &&
+              endMs !== null &&
+              dayMs >= Math.min(startMs, endMs) &&
+              dayMs <= Math.max(startMs, endMs);
+
             const className = [
               'date-picker-day',
+              !currentMonth ? 'date-picker-day-out' : '',
               disabled ? 'date-picker-day-disabled' : '',
-              outMonth ? 'date-picker-day-out' : '',
-              isSelectedStart ? 'date-picker-day-start' : '',
-              isSelectedEnd ? 'date-picker-day-end' : '',
-              inRange ? 'date-picker-day-in-range' : '',
+              inRange ? 'date-picker-day-range' : '',
+              isStart ? 'date-picker-day-start' : '',
+              isEnd ? 'date-picker-day-end' : '',
             ]
               .join(' ')
               .trim();
+
             return (
               <button
                 type="button"
-                key={day.toISOString()}
-                onClick={() => handleDayClick(day)}
-                disabled={disabled}
+                key={date.toISOString()}
                 className={className}
+                disabled={disabled}
+                onClick={() => handleDayClick(date)}
               >
-                {format(day, 'd')}
+                <span className="date-picker-day-label">{format(date, 'd')}</span>
               </button>
             );
           })}
@@ -179,7 +174,7 @@ const DateRangePicker = ({ initialRange, onClose, onApply }: DateRangePickerProp
                   className="btn btn-muted"
                   onClick={() => {
                     const { start, end } = preset.getRange();
-                    setRange({ start, end });
+                    setSelection({ start, end });
                   }}
                 >
                   {preset.label}

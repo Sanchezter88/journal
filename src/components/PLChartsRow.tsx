@@ -25,39 +25,56 @@ const tooltipStyles = {
   borderRadius: '12px',
 };
 
-const getNiceStep = (maxValue: number) => {
-  if (maxValue <= 0) {
-    return 50;
-  }
-  const roughStep = maxValue / 4;
+const getNiceStep = (rangeValue: number) => {
+  const abs = Math.abs(rangeValue);
+  if (abs === 0) return 50;
+  const roughStep = abs / 4;
   const exponent = Math.floor(Math.log10(roughStep));
   const pow10 = Math.pow(10, exponent);
-  const candidates = [1, 2, 5, 10];
+  const candidates = [1, 2, 2.5, 5, 10];
   for (const candidate of candidates) {
     const step = pow10 * candidate;
     if (roughStep <= step) {
-      return Math.max(50, step);
+      return Math.max(25, step);
     }
   }
-  return Math.max(50, pow10 * 10);
+  return Math.max(25, pow10 * 10);
 };
 
-const getDailyTicks = (data: DailyPnlPoint[]) => {
-  const values = data.map((entry) => entry.pnl ?? 0);
-  const absMax = values.reduce((max, value) => Math.max(max, Math.abs(value)), 0);
-  if (absMax === 0) return [0];
-  const step = getNiceStep(absMax);
-  const limit = Math.ceil(absMax / step) * step;
-  const ticks: number[] = [];
-  for (let value = -limit; value <= limit; value += step) {
-    ticks.push(value);
+const buildAxisTicks = (data: DailyPnlPoint[]) => {
+  const numericValues = data
+    .map((entry) => entry.pnl)
+    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+
+  if (numericValues.length === 0) {
+    return [0];
   }
-  if (!ticks.includes(0)) ticks.push(0);
+
+  const minValue = Math.min(...numericValues, 0);
+  const maxValue = Math.max(...numericValues, 0);
+
+  const positiveStep = getNiceStep(maxValue);
+  const negativeStep = getNiceStep(minValue);
+
+  const maxLimit =
+    maxValue === 0 ? positiveStep : Math.ceil(maxValue / positiveStep) * positiveStep;
+  const minLimit =
+    minValue === 0 ? -negativeStep : Math.floor(minValue / negativeStep) * negativeStep;
+
+  const ticks: number[] = [];
+  let cursor = minLimit;
+  while (cursor <= maxLimit) {
+    ticks.push(cursor);
+    cursor += positiveStep;
+  }
+  if (!ticks.includes(0)) {
+    ticks.push(0);
+  }
   return ticks.sort((a, b) => a - b);
 };
 
 const PLChartsRow = ({ equityCurve, dailyPnl }: PLChartsRowProps) => {
-  const dailyTicks = getDailyTicks(dailyPnl);
+  const dailyTicks = buildAxisTicks(dailyPnl);
   return (
     <div className="layout-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginTop: '1.5rem' }}>
       <div className="card">
