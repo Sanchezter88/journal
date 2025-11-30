@@ -38,6 +38,16 @@ const TradeLog = () => {
   const summary = useMemo(() => getDashboardSummary(trades, filters), [trades, filters]);
   const equityCurve = useMemo(() => getEquityCurveDaily(trades, filters), [trades, filters]);
   const filteredTrades = useMemo(() => filterTrades(trades, filters), [trades, filters]);
+  const totalTrades = summary.winCount + summary.lossCount + summary.breakevenCount;
+  const winLossWidth = totalTrades ? (summary.winCount / totalTrades) * 100 : 0;
+  const lossWidth = totalTrades ? (summary.lossCount / totalTrades) * 100 : 0;
+  const totalMove = Math.abs(summary.totalWinning) + Math.abs(summary.totalLosing);
+  const winDollarWidth = totalMove ? (Math.abs(summary.totalWinning) / totalMove) * 100 : 50;
+  const lossDollarWidth = totalMove ? (Math.abs(summary.totalLosing) / totalMove) * 100 : 50;
+  const profitFactorDisplay = summary.lossCount === 0 ? '∞' : summary.profitFactor.toFixed(2);
+  const avgLossDisplay = summary.avgLoss === 0 ? '0.00' : summary.avgLoss.toFixed(2);
+  const avgWinDisplay = summary.avgWin === 0 ? '0.00' : summary.avgWin.toFixed(2);
+  const ratioDisplay = summary.avgLoss === 0 ? '∞' : (summary.avgWin / summary.avgLoss).toFixed(2);
 
   const searchedTrades = useMemo(() => {
     if (!search) return filteredTrades;
@@ -65,6 +75,7 @@ const TradeLog = () => {
       await updateTrade(currentUser.id, editingTrade.id, values);
     } else {
       await createTrade(currentUser.id, values);
+      setPage(1);
     }
     await loadTrades();
   };
@@ -95,20 +106,38 @@ const TradeLog = () => {
     },
     {
       label: 'Profit Factor',
-      content: <div style={{ fontSize: '1.4rem' }}>{summary.profitFactor.toFixed(2)}</div>,
+      content: (
+        <div>
+          <div style={{ fontSize: '1.4rem' }}>{profitFactorDisplay}</div>
+          <div className="summary-bar" style={{ marginTop: '0.35rem' }}>
+            <span style={{ width: `${winDollarWidth}%`, background: 'var(--color-success)' }} />
+            <span style={{ width: `${lossDollarWidth}%`, background: 'var(--color-danger)' }} />
+          </div>
+        </div>
+      ),
     },
     {
       label: 'Win Rate',
-      content: <div style={{ fontSize: '1.4rem' }}>{summary.winRate.toFixed(1)}%</div>,
+      content: (
+        <div>
+          <div style={{ fontSize: '1.4rem' }}>{summary.winRate.toFixed(1)}%</div>
+          <div className="summary-bar" style={{ marginTop: '0.35rem' }}>
+            <span style={{ width: `${winLossWidth}%`, background: 'var(--color-success)' }} />
+            <span style={{ width: `${lossWidth}%`, background: 'var(--color-danger)' }} />
+          </div>
+        </div>
+      ),
     },
     {
       label: 'Avg Win/Loss',
       content: (
         <div>
-          <div style={{ fontSize: '1.4rem' }}>
-            {summary.avgLoss === 0 ? summary.avgWin.toFixed(2) : (summary.avgWin / summary.avgLoss).toFixed(2)}
+          <div style={{ fontSize: '1.4rem' }}>{ratioDisplay}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--color-muted)' }}>
+            <span>Win ${avgWinDisplay}</span>
+            <span>Loss ${avgLossDisplay}</span>
           </div>
-          <div style={{ display: 'flex', height: '6px', borderRadius: '999px', overflow: 'hidden', background: 'rgba(148,163,184,0.3)' }}>
+          <div style={{ display: 'flex', height: '6px', borderRadius: '999px', overflow: 'hidden', background: 'rgba(148,163,184,0.3)', marginTop: '0.35rem' }}>
             <span style={{ width: '50%', background: 'var(--color-success)' }} />
             <span style={{ width: '50%', background: 'var(--color-danger)' }} />
           </div>

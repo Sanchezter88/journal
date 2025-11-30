@@ -1,4 +1,4 @@
-import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { AvgPnlPoint, WinRatePoint } from '../data/models';
 
 interface TimeAndDayChartsGridProps {
@@ -57,6 +57,7 @@ const TimeAndDayChartsGrid = ({ winRateByTime, winRateByDay, avgPnlByTime, avgPn
               <CartesianGrid strokeDasharray="3" stroke="rgba(148,163,184,0.2)" />
               <XAxis dataKey="label" stroke="var(--color-muted)" tick={{ fontSize: 11 }} interval={0} angle={-20} textAnchor="end" />
               <YAxis stroke="var(--color-muted)" tick={{ fontSize: 12 }} />
+              <ReferenceLine y={0} stroke="rgba(255,255,255,0.4)" strokeDasharray="4 4" />
               <Tooltip contentStyle={tooltipStyles} formatter={(value: number) => [`$${value.toFixed(2)}`, 'Avg P&L']} />
               <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                 {avgPnlByTime.map((entry) => (
@@ -75,6 +76,7 @@ const TimeAndDayChartsGrid = ({ winRateByTime, winRateByDay, avgPnlByTime, avgPn
               <CartesianGrid strokeDasharray="3" stroke="rgba(148,163,184,0.2)" />
               <XAxis dataKey="label" stroke="var(--color-muted)" tick={{ fontSize: 12 }} />
               <YAxis stroke="var(--color-muted)" tick={{ fontSize: 12 }} />
+              <ReferenceLine y={0} stroke="rgba(255,255,255,0.4)" strokeDasharray="4 4" />
               <Tooltip contentStyle={tooltipStyles} formatter={(value: number) => [`$${value.toFixed(2)}`, 'Avg P&L']} />
               <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                 {avgPnlByDay.map((entry) => (

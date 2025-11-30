@@ -1,4 +1,4 @@
-import { formatISO, parseISO } from 'date-fns';
+import { eachDayOfInterval, formatISO, parseISO } from 'date-fns';
 import type {
   AvgPnlPoint,
   DashboardSummary,
@@ -29,6 +29,32 @@ const DAY_LABELS: Record<Weekday, string> = {
 };
 
 const todayIso = () => formatISO(new Date(), { representation: 'date' });
+
+const toIsoDate = (date: Date) => formatISO(date, { representation: 'date' });
+
+const resolveRangeBounds = (filters: FiltersState, tradeDates: string[]) => {
+  const today = todayIso();
+  const firstTrade = tradeDates[0] ?? today;
+  const lastTrade = tradeDates[tradeDates.length - 1] ?? today;
+  let start = filters.dateRange.start ?? firstTrade;
+  let end = filters.dateRange.end ?? lastTrade;
+  if (end > today) {
+    end = today;
+  }
+  if (start > today) {
+    start = today;
+  }
+  if (start > end) {
+    start = end;
+  }
+  return { start, end };
+};
+
+const buildContinuousDates = (filters: FiltersState, tradeDates: string[]) => {
+  const { start, end } = resolveRangeBounds(filters, tradeDates);
+  const range = eachDayOfInterval({ start: parseISO(start), end: parseISO(end) });
+  return range.map((day) => toIsoDate(day));
+};
 
 const parseMinutes = (time: string) => {
   const [hours, minutes] = time.split(':').map(Number);
@@ -146,9 +172,11 @@ const groupByDate = (trades: Trade[]) => {
 export const getEquityCurveDaily = (trades: Trade[], filters: FiltersState): EquityCurvePoint[] => {
   const filtered = filterTrades(trades, filters);
   const grouped = groupByDate(filtered);
-  const dates = Array.from(grouped.keys()).sort();
+  const tradeDates = Array.from(new Set(filtered.map((trade) => trade.date))).sort();
+  const days = buildContinuousDates(filters, tradeDates);
+  if (days.length === 0) return [];
   let cumulative = 0;
-  return dates.map((date) => {
+  return days.map((date) => {
     cumulative += grouped.get(date) ?? 0;
     return { date, cumulativePnl: roundTwo(cumulative) };
   });
@@ -157,8 +185,13 @@ export const getEquityCurveDaily = (trades: Trade[], filters: FiltersState): Equ
 export const getDailyPnl = (trades: Trade[], filters: FiltersState): DailyPnlPoint[] => {
   const filtered = filterTrades(trades, filters);
   const grouped = groupByDate(filtered);
-  const dates = Array.from(grouped.keys()).sort();
-  return dates.map((date) => ({ date, pnl: roundTwo(grouped.get(date) ?? 0) }));
+  const tradeDates = Array.from(new Set(filtered.map((trade) => trade.date))).sort();
+  const days = buildContinuousDates(filters, tradeDates);
+  if (days.length === 0) return [];
+  return days.map((date) => {
+    const pnlValue = grouped.get(date);
+    return { date, pnl: pnlValue === undefined ? null : roundTwo(pnlValue) };
+  });
 };
 
 const aggregateByTimeBucket = (trades: Trade[]) => {

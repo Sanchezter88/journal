@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 
 interface JournalNotesProps {
@@ -9,6 +9,10 @@ interface JournalNotesProps {
 const JournalNotes = ({ initialNotes, onSave }: JournalNotesProps) => {
   const [notes, setNotes] = useState(initialNotes);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+
+  useEffect(() => {
+    setNotes(initialNotes);
+  }, [initialNotes]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();

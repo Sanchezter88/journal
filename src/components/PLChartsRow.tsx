@@ -5,6 +5,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -45,7 +46,7 @@ const PLChartsRow = ({ equityCurve, dailyPnl }: PLChartsRowProps) => {
                 contentStyle={tooltipStyles}
                 formatter={(value: number) => [`$${value.toFixed(2)}`, 'Cumulative P&L']}
               />
-              <Area type="monotone" dataKey="cumulativePnl" stroke="var(--color-accent)" fill="url(#equityGradient)" />
+              <Area type="linear" dataKey="cumulativePnl" stroke="var(--color-accent)" fill="url(#equityGradient)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -58,6 +59,7 @@ const PLChartsRow = ({ equityCurve, dailyPnl }: PLChartsRowProps) => {
               <CartesianGrid strokeDasharray="3" stroke="rgba(148,163,184,0.2)" />
               <XAxis dataKey="date" stroke="var(--color-muted)" tick={{ fontSize: 12 }} />
               <YAxis stroke="var(--color-muted)" tick={{ fontSize: 12 }} domain={['dataMin', 'dataMax']} />
+              <ReferenceLine y={0} stroke="rgba(255,255,255,0.4)" strokeDasharray="4 4" />
               <Tooltip
                 contentStyle={tooltipStyles}
                 formatter={(value: number) => [`$${value.toFixed(2)}`, 'Daily P&L']}
@@ -66,7 +68,13 @@ const PLChartsRow = ({ equityCurve, dailyPnl }: PLChartsRowProps) => {
                 {dailyPnl.map((entry) => (
                   <Cell
                     key={`cell-${entry.date}`}
-                    fill={entry.pnl >= 0 ? 'var(--color-success)' : 'var(--color-danger)'}
+                    fill={
+                      entry.pnl === null
+                        ? 'transparent'
+                        : entry.pnl >= 0
+                          ? 'var(--color-success)'
+                          : 'var(--color-danger)'
+                    }
                   />
                 ))}
               </Bar>

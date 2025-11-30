@@ -109,7 +109,7 @@ export interface EquityCurvePoint {
 
 export interface DailyPnlPoint {
   date: string;
-  pnl: number;
+  pnl: number | null;
 }
 
 export interface WinRatePoint {

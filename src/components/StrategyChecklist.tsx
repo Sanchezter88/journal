@@ -23,6 +23,7 @@ const StrategyChecklist = ({ userId, date }: StrategyChecklistProps) => {
   const [builderName, setBuilderName] = useState('');
   const [builderItems, setBuilderItems] = useState<{ id?: string; text: string }[]>([]);
   const [editingStrategyId, setEditingStrategyId] = useState<string | null>(null);
+  const [builderVisible, setBuilderVisible] = useState(false);
 
   const loadStrategies = async () => {
     const list = await getStrategies(userId);
@@ -82,6 +83,7 @@ const StrategyChecklist = ({ userId, date }: StrategyChecklistProps) => {
     setBuilderName('');
     setBuilderItems([]);
     setEditingStrategyId(null);
+    setBuilderVisible(true);
   };
 
   const beginEdit = () => {
@@ -92,6 +94,15 @@ const StrategyChecklist = ({ userId, date }: StrategyChecklistProps) => {
     setBuilderName(strategy.name);
     setEditingStrategyId(strategy.id);
     setBuilderItems(items.map((item) => ({ id: item.id, text: item.text })));
+    setBuilderVisible(true);
+  };
+
+  const handleCancelBuilder = () => {
+    setBuilderMode('create');
+    setBuilderName('');
+    setBuilderItems([]);
+    setEditingStrategyId(null);
+    setBuilderVisible(false);
   };
 
   const handleSaveStrategy = async () => {
@@ -104,10 +115,7 @@ const StrategyChecklist = ({ userId, date }: StrategyChecklistProps) => {
     const { strategy } = await createOrUpdateStrategy(userId, payload);
     await loadStrategies();
     setSelectedStrategyId(strategy.id);
-    setBuilderName('');
-    setBuilderItems([]);
-    setBuilderMode('create');
-    setEditingStrategyId(null);
+    handleCancelBuilder();
   };
 
   const handleDeleteStrategy = async () => {
@@ -115,6 +123,9 @@ const StrategyChecklist = ({ userId, date }: StrategyChecklistProps) => {
     await deleteStrategy(userId, selectedStrategyId);
     await loadStrategies();
     setItems([]);
+    if (editingStrategyId === selectedStrategyId) {
+      handleCancelBuilder();
+    }
   };
 
   const builderTitle = builderMode === 'create' ? 'Create Strategy' : 'Edit Strategy';
@@ -188,85 +199,89 @@ const StrategyChecklist = ({ userId, date }: StrategyChecklistProps) => {
           </div>
         )}
       </div>
-      <div className="card">
-        <p className="card-title">{builderTitle}</p>
-        <div className="layout-grid" style={{ gap: '0.75rem' }}>
-          <label className="label">
-            Strategy Name
-            <input
-              className="input"
-              value={builderName}
-              onChange={(event) => setBuilderName(event.target.value)}
-              placeholder="Opening Drive"
-            />
-          </label>
-          <div>
-            <p style={{ marginBottom: '0.5rem', color: 'var(--color-muted)', fontSize: '0.9rem' }}>Checklist Items</p>
-            <div style={{ display: 'grid', gap: '0.5rem' }}>
-              {builderItems.map((item, index) => (
-                <div key={item.id ?? index} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <input
-                    className="input"
-                    value={item.text}
-                    onChange={(event) =>
-                      setBuilderItems((prev) => prev.map((it, idx) => (idx === index ? { ...it, text: event.target.value } : it)))
-                    }
-                    placeholder={`Condition ${index + 1}`}
-                  />
-                  <div style={{ display: 'flex', gap: '0.25rem' }}>
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      onClick={() =>
-                        setBuilderItems((prev) => {
-                          if (index === 0) return prev;
-                          const copy = [...prev];
-                          [copy[index - 1], copy[index]] = [copy[index], copy[index - 1]];
-                          return copy;
-                        })
+      {builderVisible ? (
+        <div className="card">
+          <p className="card-title">{builderTitle}</p>
+          <div className="layout-grid" style={{ gap: '0.75rem' }}>
+            <label className="label">
+              Strategy Name
+              <input
+                className="input"
+                value={builderName}
+                onChange={(event) => setBuilderName(event.target.value)}
+                placeholder="Opening Drive"
+              />
+            </label>
+            <div>
+              <p style={{ marginBottom: '0.5rem', color: 'var(--color-muted)', fontSize: '0.9rem' }}>Checklist Items</p>
+              <div style={{ display: 'grid', gap: '0.5rem' }}>
+                {builderItems.map((item, index) => (
+                  <div key={item.id ?? index} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input
+                      className="input"
+                      value={item.text}
+                      onChange={(event) =>
+                        setBuilderItems((prev) =>
+                          prev.map((it, idx) => (idx === index ? { ...it, text: event.target.value } : it))
+                        )
                       }
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      onClick={() =>
-                        setBuilderItems((prev) => {
-                          if (index === prev.length - 1) return prev;
-                          const copy = [...prev];
-                          [copy[index + 1], copy[index]] = [copy[index], copy[index + 1]];
-                          return copy;
-                        })
-                      }
-                    >
-                      ↓
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      onClick={() => setBuilderItems((prev) => prev.filter((_, idx) => idx !== index))}
-                    >
-                      ✕
-                    </button>
+                      placeholder={`Condition ${index + 1}`}
+                    />
+                    <div style={{ display: 'flex', gap: '0.25rem' }}>
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() =>
+                          setBuilderItems((prev) => {
+                            if (index === 0) return prev;
+                            const copy = [...prev];
+                            [copy[index - 1], copy[index]] = [copy[index], copy[index - 1]];
+                            return copy;
+                          })
+                        }
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() =>
+                          setBuilderItems((prev) => {
+                            if (index === prev.length - 1) return prev;
+                            const copy = [...prev];
+                            [copy[index + 1], copy[index]] = [copy[index], copy[index + 1]];
+                            return copy;
+                          })
+                        }
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() => setBuilderItems((prev) => prev.filter((_, idx) => idx !== index))}
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-              <button className="btn btn-muted" type="button" onClick={() => setBuilderItems((prev) => [...prev, { text: '' }])}>
-                Add Condition
+                ))}
+                <button className="btn btn-muted" type="button" onClick={() => setBuilderItems((prev) => [...prev, { text: '' }])}>
+                  Add Condition
+                </button>
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+              <button className="btn btn-ghost" type="button" onClick={handleCancelBuilder}>
+                Cancel
+              </button>
+              <button className="btn btn-accent" type="button" onClick={handleSaveStrategy} disabled={!builderName || builderItems.length === 0}>
+                Save Strategy
               </button>
             </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-            <button className="btn btn-ghost" type="button" onClick={beginCreate}>
-              Cancel
-            </button>
-            <button className="btn btn-accent" type="button" onClick={handleSaveStrategy} disabled={!builderName || builderItems.length === 0}>
-              Save Strategy
-            </button>
-          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 };
