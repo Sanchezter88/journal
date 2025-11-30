@@ -4,6 +4,7 @@ import type { AvgPnlPoint, WinRatePoint } from '../data/models';
 
 type PnLTooltipProps = TooltipProps<number, string> & {
   payload?: ReadonlyArray<{ value: number | null }>;
+  label?: string | number;
 };
 
 interface TimeAndDayChartsGridProps {
@@ -21,8 +22,8 @@ const tooltipStyles = {
 };
 
 const renderPnLTooltip =
-  (label: string) =>
-  ({ active, payload }: PnLTooltipProps) => {
+  (valueLabel: string) =>
+  ({ active, payload, label }: PnLTooltipProps) => {
     if (!active || !payload || payload.length === 0) {
       return null;
     }
@@ -36,7 +37,10 @@ const renderPnLTooltip =
     const display = !hasValue ? 'No trades' : `$${raw.toFixed(2)}`;
     return (
       <div style={tooltipStyles}>
-        <div style={{ color, fontWeight: 600 }}>{`${label}: ${display}`}</div>
+        {label !== undefined ? (
+          <div style={{ fontSize: '0.8rem', color: 'var(--color-muted)', marginBottom: '0.25rem' }}>{label}</div>
+        ) : null}
+        <div style={{ color, fontWeight: 600 }}>{`${valueLabel}: ${display}`}</div>
       </div>
     );
   };

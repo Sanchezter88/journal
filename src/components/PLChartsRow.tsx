@@ -16,6 +16,7 @@ import type { DailyPnlPoint, EquityCurvePoint } from '../data/models';
 
 type PnLTooltipProps = TooltipProps<number, string> & {
   payload?: ReadonlyArray<{ value: number | null }>;
+  label?: string | number;
 };
 
 interface PLChartsRowProps {
@@ -79,8 +80,8 @@ const buildAxisTicks = (data: DailyPnlPoint[]) => {
 };
 
 const renderValueTooltip =
-  (label: string) =>
-  ({ active, payload }: PnLTooltipProps) => {
+  (valueLabel: string) =>
+  ({ active, payload, label }: PnLTooltipProps) => {
     if (!active || !payload || payload.length === 0) {
       return null;
     }
@@ -95,7 +96,10 @@ const renderValueTooltip =
 
     return (
       <div style={tooltipStyles}>
-        <div style={{ fontWeight: 600, color }}>{`${label}: ${display}`}</div>
+        {label !== undefined ? (
+          <div style={{ fontSize: '0.8rem', color: 'var(--color-muted)', marginBottom: '0.25rem' }}>{label}</div>
+        ) : null}
+        <div style={{ fontWeight: 600, color }}>{`${valueLabel}: ${display}`}</div>
       </div>
     );
   };
