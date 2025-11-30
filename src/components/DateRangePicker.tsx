@@ -121,9 +121,9 @@ const DateRangePicker = ({ initialRange, onClose, onApply }: DateRangePickerProp
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}>
           <strong>{format(month, 'MMMM yyyy')}</strong>
         </div>
-        <div className="calendar-grid" style={{ gap: '0.25rem', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+        <div className="date-picker-grid">
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
-            <div key={day} style={{ textAlign: 'center', color: 'var(--color-muted)', fontSize: '0.8rem' }}>
+            <div key={day} className="date-picker-weekday">
               {day}
             </div>
           ))}
@@ -137,28 +137,23 @@ const DateRangePicker = ({ initialRange, onClose, onApply }: DateRangePickerProp
               (isAfter(day, range.start) || isSameDay(day, range.start)) &&
               (isBefore(day, range.end) || isSameDay(day, range.end));
             const outMonth = day.getMonth() !== month.getMonth();
+            const className = [
+              'date-picker-day',
+              disabled ? 'date-picker-day-disabled' : '',
+              outMonth ? 'date-picker-day-out' : '',
+              isSelectedStart ? 'date-picker-day-start' : '',
+              isSelectedEnd ? 'date-picker-day-end' : '',
+              inRange ? 'date-picker-day-in-range' : '',
+            ]
+              .join(' ')
+              .trim();
             return (
               <button
                 type="button"
                 key={day.toISOString()}
                 onClick={() => handleDayClick(day)}
                 disabled={disabled}
-                style={{
-                  borderRadius: isSelectedStart || isSelectedEnd ? '50%' : '12px',
-                  padding: '0.35rem',
-                  border: 'none',
-                  background: isSelectedStart || isSelectedEnd
-                    ? 'var(--color-accent)'
-                    : inRange
-                      ? 'rgba(56, 189, 248, 0.2)'
-                      : 'transparent',
-                  color: disabled
-                    ? 'rgba(148,163,184,0.4)'
-                    : outMonth
-                      ? 'rgba(148,163,184,0.6)'
-                      : '#fff',
-                  cursor: disabled ? 'not-allowed' : 'pointer',
-                }}
+                className={className}
               >
                 {format(day, 'd')}
               </button>

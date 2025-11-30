@@ -193,11 +193,6 @@ const StrategyChecklist = ({ userId, date }: StrategyChecklistProps) => {
                 ))}
               </div>
             )}
-            {selectedStrategyId ? (
-              <button className="btn btn-ghost" onClick={handleDeleteStrategy}>
-                Delete Strategy
-              </button>
-            ) : null}
           </div>
         )}
       </div>
