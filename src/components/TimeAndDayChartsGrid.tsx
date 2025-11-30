@@ -38,7 +38,7 @@ const renderPnLTooltip =
     return (
       <div style={tooltipStyles}>
         {label !== undefined ? (
-          <div style={{ fontSize: '0.8rem', color: 'var(--color-muted)', marginBottom: '0.25rem' }}>{label}</div>
+          <div style={{ fontSize: '0.9rem', color: '#f8fafc', fontWeight: 600, marginBottom: '0.25rem' }}>{label}</div>
         ) : null}
         <div style={{ color, fontWeight: 600 }}>{`${valueLabel}: ${display}`}</div>
       </div>
