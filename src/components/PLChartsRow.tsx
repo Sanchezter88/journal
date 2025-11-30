@@ -1,0 +1,81 @@
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import type { DailyPnlPoint, EquityCurvePoint } from '../data/models';
+
+interface PLChartsRowProps {
+  equityCurve: EquityCurvePoint[];
+  dailyPnl: DailyPnlPoint[];
+}
+
+const tooltipStyles = {
+  backgroundColor: '#0f172a',
+  border: '1px solid rgba(148,163,184,0.2)',
+  padding: '0.5rem 0.75rem',
+  borderRadius: '12px',
+};
+
+const PLChartsRow = ({ equityCurve, dailyPnl }: PLChartsRowProps) => {
+  return (
+    <div className="layout-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginTop: '1.5rem' }}>
+      <div className="card">
+        <p className="card-title">Daily Net Cumulative P&L</p>
+        <div style={{ height: '260px' }}>
+          <ResponsiveContainer>
+            <AreaChart data={equityCurve} margin={{ top: 10, left: -20 }}>
+              <defs>
+                <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--color-accent)" stopOpacity={0.6} />
+                  <stop offset="100%" stopColor="var(--color-accent)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3" stroke="rgba(148,163,184,0.2)" />
+              <XAxis dataKey="date" stroke="var(--color-muted)" tick={{ fontSize: 12 }} />
+              <YAxis stroke="var(--color-muted)" tick={{ fontSize: 12 }} domain={[0, 'dataMax']} />
+              <Tooltip
+                contentStyle={tooltipStyles}
+                formatter={(value: number) => [`$${value.toFixed(2)}`, 'Cumulative P&L']}
+              />
+              <Area type="monotone" dataKey="cumulativePnl" stroke="var(--color-accent)" fill="url(#equityGradient)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+      <div className="card">
+        <p className="card-title">Net Daily P&L</p>
+        <div style={{ height: '260px' }}>
+          <ResponsiveContainer>
+            <BarChart data={dailyPnl} margin={{ top: 10, left: -20 }}>
+              <CartesianGrid strokeDasharray="3" stroke="rgba(148,163,184,0.2)" />
+              <XAxis dataKey="date" stroke="var(--color-muted)" tick={{ fontSize: 12 }} />
+              <YAxis stroke="var(--color-muted)" tick={{ fontSize: 12 }} domain={['dataMin', 'dataMax']} />
+              <Tooltip
+                contentStyle={tooltipStyles}
+                formatter={(value: number) => [`$${value.toFixed(2)}`, 'Daily P&L']}
+              />
+              <Bar dataKey="pnl" radius={[6, 6, 0, 0]}>
+                {dailyPnl.map((entry) => (
+                  <Cell
+                    key={`cell-${entry.date}`}
+                    fill={entry.pnl >= 0 ? 'var(--color-success)' : 'var(--color-danger)'}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PLChartsRow;

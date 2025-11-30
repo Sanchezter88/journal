@@ -1,0 +1,157 @@
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import TradesTable from '../components/TradesTable';
+import TradeModal from '../components/TradeModal';
+import type { TradeFormValues } from '../components/TradeModal';
+import JournalNotes from '../components/JournalNotes';
+import ScreenshotsSection from '../components/ScreenshotsSection';
+import StrategyChecklist from '../components/StrategyChecklist';
+import { useAuth } from '../auth/AuthContext';
+import type { Trade, Screenshot } from '../data/models';
+import { createTrade, getTrades, updateTrade } from '../data/repositories/tradeRepository';
+import { getJournalEntry, upsertJournalEntry } from '../data/repositories/journalRepository';
+import { addScreenshot, deleteScreenshot, getScreenshotsForDate } from '../data/repositories/screenshotRepository';
+
+const readFileAsDataUrl = (file: File) => {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
+const DailyJournal = () => {
+  const { currentUser } = useAuth();
+  const { date = '' } = useParams();
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [notes, setNotes] = useState('');
+  const [screenshots, setScreenshots] = useState<Screenshot[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
+
+  const loadTrades = async () => {
+    if (!currentUser) return;
+    setLoading(true);
+    const allTrades = await getTrades(currentUser.id);
+    setTrades(allTrades.filter((trade) => trade.date === date));
+    setLoading(false);
+  };
+
+  const loadNotes = async () => {
+    if (!currentUser) return;
+    const entry = await getJournalEntry(currentUser.id, date);
+    setNotes(entry?.notes ?? '');
+  };
+
+  const loadScreenshots = async () => {
+    if (!currentUser) return;
+    const list = await getScreenshotsForDate(currentUser.id, date);
+    setScreenshots(list);
+  };
+
+  useEffect(() => {
+    loadTrades();
+    loadNotes();
+    loadScreenshots();
+  }, [currentUser?.id, date]);
+
+  const handleSaveNotes = async (value: string) => {
+    if (!currentUser) return;
+    setNotes(value);
+    await upsertJournalEntry(currentUser.id, date, value);
+  };
+
+  const handleTradeSubmit = async (values: TradeFormValues) => {
+    if (!currentUser) return;
+    if (editingTrade) {
+      await updateTrade(currentUser.id, editingTrade.id, values);
+    } else {
+      await createTrade(currentUser.id, { ...values, date });
+    }
+    await loadTrades();
+  };
+
+  const handleUploadScreenshots = async (files: FileList) => {
+    if (!currentUser) return;
+    for (const file of Array.from(files)) {
+      const fileUrl = await readFileAsDataUrl(file);
+      await addScreenshot(currentUser.id, {
+        date,
+        fileUrl,
+        description: file.name,
+      });
+    }
+    await loadScreenshots();
+  };
+
+  const handleDeleteScreenshot = async (id: string) => {
+    if (!currentUser) return;
+    await deleteScreenshot(currentUser.id, id);
+    await loadScreenshots();
+  };
+
+  return (
+    <div className="layout-grid" style={{ gap: '1.5rem' }}>
+      <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <p className="card-title">Daily Journal</p>
+          <h2>{date}</h2>
+        </div>
+        <button
+          className="btn btn-accent"
+          onClick={() => {
+            setEditingTrade(null);
+            setModalOpen(true);
+          }}
+        >
+          + Add Trade
+        </button>
+      </div>
+      {loading ? (
+        <div className="card" style={{ textAlign: 'center' }}>
+          <p style={{ color: 'var(--color-muted)' }}>Loading trades…</p>
+        </div>
+      ) : (
+        <TradesTable
+          trades={trades}
+          showDate={false}
+          onEdit={(trade) => {
+            setEditingTrade(trade);
+            setModalOpen(true);
+          }}
+        />
+      )}
+      <JournalNotes initialNotes={notes} onSave={handleSaveNotes} />
+      <ScreenshotsSection screenshots={screenshots} onUpload={handleUploadScreenshots} onDelete={handleDeleteScreenshot} />
+      {currentUser ? <StrategyChecklist userId={currentUser.id} date={date} /> : null}
+      {modalOpen ? (
+        <TradeModal
+          mode={editingTrade ? 'edit' : 'create'}
+          initialValues={
+            editingTrade
+              ? {
+                  date: editingTrade.date,
+                  time: editingTrade.time,
+                  contracts: editingTrade.contracts,
+                  side: editingTrade.side,
+                  instrument: editingTrade.instrument,
+                  result: editingTrade.result,
+                  riskRewardR: editingTrade.riskRewardR,
+                  pnl: editingTrade.pnl,
+                }
+              : { date, time: '09:30' }
+          }
+          onClose={() => setModalOpen(false)}
+          onSubmit={async (values) => {
+            await handleTradeSubmit(values);
+            setModalOpen(false);
+          }}
+        />
+      ) : null}
+    </div>
+  );
+};
+
+export default DailyJournal;
