@@ -11,7 +11,12 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import type { TooltipProps } from 'recharts';
 import type { DailyPnlPoint, EquityCurvePoint } from '../data/models';
+
+type PnLTooltipProps = TooltipProps<number, string> & {
+  payload?: ReadonlyArray<{ value: number | null }>;
+};
 
 interface PLChartsRowProps {
   equityCurve: EquityCurvePoint[];
@@ -73,6 +78,28 @@ const buildAxisTicks = (data: DailyPnlPoint[]) => {
   return ticks.sort((a, b) => a - b);
 };
 
+const renderValueTooltip =
+  (label: string) =>
+  ({ active, payload }: PnLTooltipProps) => {
+    if (!active || !payload || payload.length === 0) {
+      return null;
+    }
+    const raw = payload[0].value as number | null | undefined;
+    const hasValue = typeof raw === 'number' && Number.isFinite(raw);
+    const color = !hasValue
+      ? 'var(--color-muted)'
+      : raw >= 0
+        ? 'var(--color-success)'
+        : 'var(--color-danger)';
+    const display = !hasValue ? 'No trades' : `$${raw.toFixed(2)}`;
+
+    return (
+      <div style={tooltipStyles}>
+        <div style={{ fontWeight: 600, color }}>{`${label}: ${display}`}</div>
+      </div>
+    );
+  };
+
 const PLChartsRow = ({ equityCurve, dailyPnl }: PLChartsRowProps) => {
   const dailyTicks = buildAxisTicks(dailyPnl);
   return (
@@ -114,14 +141,7 @@ const PLChartsRow = ({ equityCurve, dailyPnl }: PLChartsRowProps) => {
                 domain={[dailyTicks[0] ?? 0, dailyTicks[dailyTicks.length - 1] ?? 0]}
               />
               <ReferenceLine y={0} stroke="rgba(255,255,255,0.4)" strokeDasharray="4 4" />
-              <Tooltip
-                contentStyle={tooltipStyles}
-                formatter={(value: number) =>
-                  value === null || value === undefined
-                    ? ['No trades', 'Daily P&L']
-                    : [`$${value.toFixed(2)}`, 'Daily P&L']
-                }
-              />
+              <Tooltip content={renderValueTooltip('Daily P&L')} />
               <Bar dataKey="pnl" radius={[6, 6, 0, 0]}>
                 {dailyPnl.map((entry) => (
                   <Cell

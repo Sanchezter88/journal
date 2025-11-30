@@ -1,5 +1,10 @@
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import type { TooltipProps } from 'recharts';
 import type { AvgPnlPoint, WinRatePoint } from '../data/models';
+
+type PnLTooltipProps = TooltipProps<number, string> & {
+  payload?: ReadonlyArray<{ value: number | null }>;
+};
 
 interface TimeAndDayChartsGridProps {
   winRateByTime: WinRatePoint[];
@@ -14,6 +19,27 @@ const tooltipStyles = {
   padding: '0.5rem 0.75rem',
   borderRadius: '12px',
 };
+
+const renderPnLTooltip =
+  (label: string) =>
+  ({ active, payload }: PnLTooltipProps) => {
+    if (!active || !payload || payload.length === 0) {
+      return null;
+    }
+    const raw = payload[0].value as number | null | undefined;
+    const hasValue = typeof raw === 'number' && Number.isFinite(raw);
+    const color = !hasValue
+      ? 'var(--color-muted)'
+      : raw >= 0
+        ? 'var(--color-success)'
+        : 'var(--color-danger)';
+    const display = !hasValue ? 'No trades' : `$${raw.toFixed(2)}`;
+    return (
+      <div style={tooltipStyles}>
+        <div style={{ color, fontWeight: 600 }}>{`${label}: ${display}`}</div>
+      </div>
+    );
+  };
 
 const TimeAndDayChartsGrid = ({ winRateByTime, winRateByDay, avgPnlByTime, avgPnlByDay }: TimeAndDayChartsGridProps) => {
   return (
@@ -58,7 +84,7 @@ const TimeAndDayChartsGrid = ({ winRateByTime, winRateByDay, avgPnlByTime, avgPn
               <XAxis dataKey="label" stroke="var(--color-muted)" tick={{ fontSize: 11 }} interval={0} angle={-20} textAnchor="end" />
               <YAxis stroke="var(--color-muted)" tick={{ fontSize: 12 }} />
               <ReferenceLine y={0} stroke="rgba(255,255,255,0.4)" strokeDasharray="4 4" />
-              <Tooltip contentStyle={tooltipStyles} formatter={(value: number) => [`$${value.toFixed(2)}`, 'Avg P&L']} />
+              <Tooltip content={renderPnLTooltip('Avg P&L')} />
               <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                 {avgPnlByTime.map((entry) => (
                   <Cell key={entry.label} fill={entry.value >= 0 ? 'var(--color-success)' : 'var(--color-danger)'} />
@@ -77,7 +103,7 @@ const TimeAndDayChartsGrid = ({ winRateByTime, winRateByDay, avgPnlByTime, avgPn
               <XAxis dataKey="label" stroke="var(--color-muted)" tick={{ fontSize: 12 }} />
               <YAxis stroke="var(--color-muted)" tick={{ fontSize: 12 }} />
               <ReferenceLine y={0} stroke="rgba(255,255,255,0.4)" strokeDasharray="4 4" />
-              <Tooltip contentStyle={tooltipStyles} formatter={(value: number) => [`$${value.toFixed(2)}`, 'Avg P&L']} />
+              <Tooltip content={renderPnLTooltip('Avg P&L')} />
               <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                 {avgPnlByDay.map((entry) => (
                   <Cell key={entry.label} fill={entry.value >= 0 ? 'var(--color-success)' : 'var(--color-danger)'} />
