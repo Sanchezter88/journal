@@ -141,9 +141,9 @@ const TradeLog = () => {
       content: (
         <div>
           <div style={{ fontSize: '1.4rem' }}>{ratioDisplay}</div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--color-muted)' }}>
-            <span>Win ${avgWinDisplay}</span>
-            <span>Loss ${avgLossDisplay}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+            <span style={{ color: 'var(--color-success)' }}>Win ${avgWinDisplay}</span>
+            <span style={{ color: 'var(--color-danger)' }}>Loss ${avgLossDisplay}</span>
           </div>
           <div style={{ display: 'flex', height: '6px', borderRadius: '999px', overflow: 'hidden', background: 'rgba(148,163,184,0.3)', marginTop: '0.35rem' }}>
             <span style={{ width: '50%', background: 'var(--color-success)' }} />

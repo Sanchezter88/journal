@@ -13,6 +13,17 @@ export interface TradeFormValues {
   pnl: number;
 }
 
+type TradeFormState = {
+  date: string;
+  time: string;
+  contracts: number;
+  side: TradeSide;
+  instrument: string;
+  result: TradeResult;
+  riskRewardInput: string;
+  pnlInput: string;
+};
+
 interface TradeModalProps {
   mode: 'create' | 'edit';
   initialValues?: Partial<TradeFormValues>;
@@ -23,18 +34,18 @@ interface TradeModalProps {
 const instrumentOptions = ['NQ', 'ES', 'MNQ', 'MES', 'CL', 'GC', 'Other'];
 
 const TradeModal = ({ mode, initialValues, onClose, onSubmit }: TradeModalProps) => {
-  const buildInitialState = () => ({
+  const buildInitialState = (): TradeFormState => ({
     date: initialValues?.date ?? new Date().toISOString().slice(0, 10),
     time: initialValues?.time ?? '09:30',
     contracts: initialValues?.contracts ?? 1,
     side: (initialValues?.side as TradeSide) ?? 'LONG',
     instrument: initialValues?.instrument ?? 'NQ',
     result: (initialValues?.result as TradeResult) ?? 'WIN',
-    riskRewardR: initialValues?.riskRewardR ?? 1,
-    pnl: initialValues?.pnl ?? 0,
+    riskRewardInput: initialValues?.riskRewardR !== undefined ? String(initialValues.riskRewardR) : '',
+    pnlInput: initialValues?.pnl !== undefined ? String(Math.abs(initialValues.pnl)) : '',
   });
 
-  const [form, setForm] = useState<TradeFormValues>(buildInitialState);
+  const [form, setForm] = useState<TradeFormState>(buildInitialState);
 
   useEffect(() => {
     setForm(buildInitialState());
@@ -43,24 +54,75 @@ const TradeModal = ({ mode, initialValues, onClose, onSubmit }: TradeModalProps)
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const handleChange = (field: keyof TradeFormValues, value: string) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]:
-        field === 'contracts'
-          ? Number(value)
-          : field === 'riskRewardR' || field === 'pnl'
-            ? Number(value)
-            : value,
-    }));
+  const handleFieldChange = (field: keyof TradeFormState, value: string) => {
+    setForm((prev) => {
+      if (field === 'contracts') {
+        return { ...prev, contracts: Number(value) || 0 };
+      }
+      return { ...prev, [field]: value } as TradeFormState;
+    });
   };
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setSubmitting(true);
     setError('');
+
+    const trimmedRisk = form.riskRewardInput.trim();
+    if (!trimmedRisk) {
+      setError('Please enter a risk-reward multiple.');
+      setSubmitting(false);
+      return;
+    }
+
+    const riskValue = Number(trimmedRisk);
+    if (!Number.isFinite(riskValue) || riskValue <= 0) {
+      setError('Risk reward must be a positive number.');
+      setSubmitting(false);
+      return;
+    }
+
+    let pnlValue = 0;
+    if (form.result !== 'BREAKEVEN') {
+      const trimmedPnl = form.pnlInput.trim();
+      if (!trimmedPnl) {
+        setError('Please enter a profit or loss amount.');
+        setSubmitting(false);
+        return;
+      }
+      const parsedPnl = Number(trimmedPnl);
+      if (!Number.isFinite(parsedPnl)) {
+        setError('Profit / Loss must be a valid number.');
+        setSubmitting(false);
+        return;
+      }
+      pnlValue = Math.abs(parsedPnl);
+      if (form.result === 'LOSS') {
+        pnlValue = -pnlValue;
+      }
+    } else {
+      pnlValue = 0;
+    }
+
+    if (form.result === 'WIN') {
+      pnlValue = Math.abs(pnlValue);
+    }
+
+    const contractsValue = Number.isFinite(form.contracts) && form.contracts > 0 ? form.contracts : 1;
+
+    const payload: TradeFormValues = {
+      date: form.date,
+      time: form.time,
+      contracts: contractsValue,
+      side: form.side,
+      instrument: form.instrument,
+      result: form.result,
+      riskRewardR: riskValue,
+      pnl: pnlValue,
+    };
+
     try {
-      await onSubmit(form);
+      await onSubmit(payload);
       onClose();
     } catch (err) {
       console.error(err);
@@ -69,6 +131,13 @@ const TradeModal = ({ mode, initialValues, onClose, onSubmit }: TradeModalProps)
       setSubmitting(false);
     }
   };
+
+  const pnlColor =
+    form.result === 'LOSS'
+      ? 'var(--color-danger)'
+      : form.result === 'WIN'
+        ? 'var(--color-success)'
+        : 'var(--color-muted)';
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -91,7 +160,7 @@ const TradeModal = ({ mode, initialValues, onClose, onSubmit }: TradeModalProps)
                 className="input"
                 max={new Date().toISOString().slice(0, 10)}
                 value={form.date}
-                onChange={(event) => handleChange('date', event.target.value)}
+                onChange={(event) => handleFieldChange('date', event.target.value)}
                 required
               />
             </label>
@@ -101,7 +170,7 @@ const TradeModal = ({ mode, initialValues, onClose, onSubmit }: TradeModalProps)
                 type="time"
                 className="input"
                 value={form.time}
-                onChange={(event) => handleChange('time', event.target.value)}
+                onChange={(event) => handleFieldChange('time', event.target.value)}
                 required
               />
             </label>
@@ -112,7 +181,7 @@ const TradeModal = ({ mode, initialValues, onClose, onSubmit }: TradeModalProps)
                 min={1}
                 className="input"
                 value={form.contracts}
-                onChange={(event) => handleChange('contracts', event.target.value)}
+                onChange={(event) => handleFieldChange('contracts', event.target.value)}
                 required
               />
             </label>
@@ -120,7 +189,7 @@ const TradeModal = ({ mode, initialValues, onClose, onSubmit }: TradeModalProps)
           <div className="form-row">
             <label className="label">
               Side
-              <select className="select" value={form.side} onChange={(event) => handleChange('side', event.target.value)}>
+              <select className="select" value={form.side} onChange={(event) => handleFieldChange('side', event.target.value)}>
                 <option value="LONG">Long</option>
                 <option value="SHORT">Short</option>
               </select>
@@ -130,7 +199,7 @@ const TradeModal = ({ mode, initialValues, onClose, onSubmit }: TradeModalProps)
               <select
                 className="select"
                 value={form.instrument}
-                onChange={(event) => handleChange('instrument', event.target.value)}
+                onChange={(event) => handleFieldChange('instrument', event.target.value)}
               >
                 {instrumentOptions.map((option) => (
                   <option key={option} value={option}>
@@ -141,7 +210,7 @@ const TradeModal = ({ mode, initialValues, onClose, onSubmit }: TradeModalProps)
             </label>
             <label className="label">
               Result
-              <select className="select" value={form.result} onChange={(event) => handleChange('result', event.target.value)}>
+              <select className="select" value={form.result} onChange={(event) => handleFieldChange('result', event.target.value)}>
                 <option value="WIN">Win</option>
                 <option value="LOSS">Loss</option>
                 <option value="BREAKEVEN">Break-even</option>
@@ -155,8 +224,9 @@ const TradeModal = ({ mode, initialValues, onClose, onSubmit }: TradeModalProps)
                 type="number"
                 step="0.01"
                 className="input"
-                value={form.riskRewardR}
-                onChange={(event) => handleChange('riskRewardR', event.target.value)}
+                placeholder="e.g. 2.5"
+                value={form.riskRewardInput}
+                onChange={(event) => handleFieldChange('riskRewardInput', event.target.value)}
               />
             </label>
             <label className="label">
@@ -165,9 +235,10 @@ const TradeModal = ({ mode, initialValues, onClose, onSubmit }: TradeModalProps)
                 type="number"
                 step="0.01"
                 className="input"
-                style={{ color: form.pnl >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}
-                value={form.pnl}
-                onChange={(event) => handleChange('pnl', event.target.value)}
+                placeholder="e.g. 500"
+                style={{ color: pnlColor }}
+                value={form.pnlInput}
+                onChange={(event) => handleFieldChange('pnlInput', event.target.value)}
               />
             </label>
           </div>

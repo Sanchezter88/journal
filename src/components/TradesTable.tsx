@@ -57,7 +57,7 @@ const TradesTable = ({ trades, onEdit, onDelete, onViewDay, showDate = true }: T
                     </span>
                   </td>
                   <td>
-                    1 :
+                    1 :{' '}
                     {Number.isFinite(trade.riskRewardR) ? trade.riskRewardR.toFixed(2) : '0.00'}
                   </td>
                   <td style={{ color: trade.pnl >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
