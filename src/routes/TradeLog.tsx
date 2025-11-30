@@ -88,7 +88,7 @@ const TradeLog = () => {
           <div style={{ fontSize: '1.4rem', color: summary.netPnl >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
             {summary.netPnl >= 0 ? '+' : '-'}${Math.abs(summary.netPnl).toFixed(0)}
           </div>
-          <div style={{ width: '80px', height: '28px' }}>
+          <div style={{ width: '150px', height: '50px', flexShrink: 0 }}>
             <ResponsiveContainer>
               <AreaChart data={equityCurve}>
                 <defs>
