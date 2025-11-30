@@ -25,7 +25,7 @@ const buildWeeks = (month: Date) => {
   while (!isAfter(current, end)) {
     const week: Date[] = [];
     for (let i = 0; i < 7; i++) {
-      week.push(current);
+      week.push(new Date(current));
       current = addDays(current, 1);
     }
     weeks.push(week);

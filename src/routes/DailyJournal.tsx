@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import TradesTable from '../components/TradesTable';
 import TradeModal from '../components/TradeModal';
 import type { TradeFormValues } from '../components/TradeModal';
@@ -11,6 +11,7 @@ import type { Trade, Screenshot } from '../data/models';
 import { createTrade, getTrades, updateTrade } from '../data/repositories/tradeRepository';
 import { getJournalEntry, upsertJournalEntry } from '../data/repositories/journalRepository';
 import { addScreenshot, deleteScreenshot, getScreenshotsForDate } from '../data/repositories/screenshotRepository';
+import { addDays, format, formatISO, isAfter, parseISO } from 'date-fns';
 
 const readFileAsDataUrl = (file: File) => {
   return new Promise<string>((resolve, reject) => {
@@ -22,6 +23,7 @@ const readFileAsDataUrl = (file: File) => {
 };
 
 const DailyJournal = () => {
+  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { date = '' } = useParams();
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -30,6 +32,13 @@ const DailyJournal = () => {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
+  const today = new Date();
+  const parsedDate = date ? parseISO(date) : new Date();
+  const safeDate = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+  const previousDate = formatISO(addDays(safeDate, -1), { representation: 'date' });
+  const nextDate = formatISO(addDays(safeDate, 1), { representation: 'date' });
+  const nextDisabled = isAfter(addDays(safeDate, 1), today);
+  const displayDate = format(safeDate, 'EEEE, MMM d, yyyy');
 
   const loadTrades = async () => {
     if (!currentUser) return;
@@ -94,10 +103,23 @@ const DailyJournal = () => {
 
   return (
     <div className="layout-grid" style={{ gap: '1.5rem' }}>
-      <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
+      <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
           <p className="card-title">Daily Journal</p>
-          <h2>{date}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button className="btn btn-ghost" type="button" onClick={() => navigate(`/journal/${previousDate}`)}>
+              ←
+            </button>
+            <h2>{displayDate}</h2>
+            <button
+              className="btn btn-ghost"
+              type="button"
+              onClick={() => navigate(`/journal/${nextDate}`)}
+              disabled={nextDisabled}
+            >
+              →
+            </button>
+          </div>
         </div>
         <button
           className="btn btn-accent"

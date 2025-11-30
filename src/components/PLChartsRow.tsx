@@ -25,7 +25,39 @@ const tooltipStyles = {
   borderRadius: '12px',
 };
 
+const getNiceStep = (maxValue: number) => {
+  if (maxValue <= 0) {
+    return 50;
+  }
+  const roughStep = maxValue / 4;
+  const exponent = Math.floor(Math.log10(roughStep));
+  const pow10 = Math.pow(10, exponent);
+  const candidates = [1, 2, 5, 10];
+  for (const candidate of candidates) {
+    const step = pow10 * candidate;
+    if (roughStep <= step) {
+      return Math.max(50, step);
+    }
+  }
+  return Math.max(50, pow10 * 10);
+};
+
+const getDailyTicks = (data: DailyPnlPoint[]) => {
+  const values = data.map((entry) => entry.pnl ?? 0);
+  const absMax = values.reduce((max, value) => Math.max(max, Math.abs(value)), 0);
+  if (absMax === 0) return [0];
+  const step = getNiceStep(absMax);
+  const limit = Math.ceil(absMax / step) * step;
+  const ticks: number[] = [];
+  for (let value = -limit; value <= limit; value += step) {
+    ticks.push(value);
+  }
+  if (!ticks.includes(0)) ticks.push(0);
+  return ticks.sort((a, b) => a - b);
+};
+
 const PLChartsRow = ({ equityCurve, dailyPnl }: PLChartsRowProps) => {
+  const dailyTicks = getDailyTicks(dailyPnl);
   return (
     <div className="layout-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginTop: '1.5rem' }}>
       <div className="card">
@@ -58,11 +90,20 @@ const PLChartsRow = ({ equityCurve, dailyPnl }: PLChartsRowProps) => {
             <BarChart data={dailyPnl} margin={{ top: 10, left: -20 }}>
               <CartesianGrid strokeDasharray="3" stroke="rgba(148,163,184,0.2)" />
               <XAxis dataKey="date" stroke="var(--color-muted)" tick={{ fontSize: 12 }} />
-              <YAxis stroke="var(--color-muted)" tick={{ fontSize: 12 }} domain={['dataMin', 'dataMax']} />
+              <YAxis
+                stroke="var(--color-muted)"
+                tick={{ fontSize: 12 }}
+                ticks={dailyTicks}
+                domain={[dailyTicks[0] ?? 0, dailyTicks[dailyTicks.length - 1] ?? 0]}
+              />
               <ReferenceLine y={0} stroke="rgba(255,255,255,0.4)" strokeDasharray="4 4" />
               <Tooltip
                 contentStyle={tooltipStyles}
-                formatter={(value: number) => [`$${value.toFixed(2)}`, 'Daily P&L']}
+                formatter={(value: number) =>
+                  value === null || value === undefined
+                    ? ['No trades', 'Daily P&L']
+                    : [`$${value.toFixed(2)}`, 'Daily P&L']
+                }
               />
               <Bar dataKey="pnl" radius={[6, 6, 0, 0]}>
                 {dailyPnl.map((entry) => (

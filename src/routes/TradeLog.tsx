@@ -109,7 +109,11 @@ const TradeLog = () => {
       content: (
         <div>
           <div style={{ fontSize: '1.4rem' }}>{profitFactorDisplay}</div>
-          <div className="summary-bar" style={{ marginTop: '0.35rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginTop: '0.3rem' }}>
+            <span style={{ color: 'var(--color-success)' }}>Wins ${Math.abs(summary.totalWinning).toFixed(0)}</span>
+            <span style={{ color: 'var(--color-danger)' }}>Losses ${Math.abs(summary.totalLosing).toFixed(0)}</span>
+          </div>
+          <div className="summary-bar" style={{ marginTop: '0.25rem' }}>
             <span style={{ width: `${winDollarWidth}%`, background: 'var(--color-success)' }} />
             <span style={{ width: `${lossDollarWidth}%`, background: 'var(--color-danger)' }} />
           </div>
@@ -121,7 +125,11 @@ const TradeLog = () => {
       content: (
         <div>
           <div style={{ fontSize: '1.4rem' }}>{summary.winRate.toFixed(1)}%</div>
-          <div className="summary-bar" style={{ marginTop: '0.35rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginTop: '0.3rem' }}>
+            <span style={{ color: 'var(--color-success)' }}>Wins {summary.winCount}</span>
+            <span style={{ color: 'var(--color-danger)' }}>Losses {summary.lossCount}</span>
+          </div>
+          <div className="summary-bar" style={{ marginTop: '0.25rem' }}>
             <span style={{ width: `${winLossWidth}%`, background: 'var(--color-success)' }} />
             <span style={{ width: `${lossWidth}%`, background: 'var(--color-danger)' }} />
           </div>

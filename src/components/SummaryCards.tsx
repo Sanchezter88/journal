@@ -38,22 +38,13 @@ const SummaryCards = ({ summary }: SummaryCardsProps) => {
       content: (
         <div>
           <div style={{ fontSize: '2rem', fontWeight: 700 }}>{summary.winRate.toFixed(1)}%</div>
-          <div
-            style={{
-              display: 'flex',
-              height: '10px',
-              borderRadius: '999px',
-              overflow: 'hidden',
-              background: 'rgba(148,163,184,0.2)',
-              marginTop: '0.5rem',
-            }}
-          >
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginTop: '0.35rem' }}>
+            <span style={{ color: 'var(--color-success)' }}>Wins {summary.winCount}</span>
+            <span style={{ color: 'var(--color-danger)' }}>Losses {summary.lossCount}</span>
+          </div>
+          <div className="summary-bar">
             <span style={{ width: `${winLossWidth}%`, background: 'var(--color-success)' }} />
             <span style={{ width: `${lossWidth}%`, background: 'var(--color-danger)' }} />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginTop: '0.25rem' }}>
-            <span style={{ color: 'var(--color-success)' }}>Wins: {summary.winCount}</span>
-            <span style={{ color: 'var(--color-danger)' }}>Losses: {summary.lossCount}</span>
           </div>
         </div>
       ),
@@ -63,12 +54,13 @@ const SummaryCards = ({ summary }: SummaryCardsProps) => {
       content: (
         <div>
           <div style={{ fontSize: '2rem', fontWeight: 700 }}>{profitFactorDisplay}</div>
-          <div className="summary-bar">
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginTop: '0.35rem' }}>
+            <span style={{ color: 'var(--color-success)' }}>Wins ${Math.abs(summary.totalWinning).toFixed(0)}</span>
+            <span style={{ color: 'var(--color-danger)' }}>Losses ${Math.abs(summary.totalLosing).toFixed(0)}</span>
+          </div>
+          <div className="summary-bar" style={{ marginTop: '0.3rem' }}>
             <span style={{ width: `${winDollarWidth}%`, background: 'var(--color-success)' }} />
             <span style={{ width: `${lossDollarWidth}%`, background: 'var(--color-danger)' }} />
-          </div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--color-muted)', marginTop: '0.35rem' }}>
-            Wins ${Math.abs(summary.totalWinning).toFixed(0)} vs Losses ${Math.abs(summary.totalLosing).toFixed(0)}
           </div>
         </div>
       ),

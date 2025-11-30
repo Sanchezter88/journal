@@ -120,6 +120,8 @@ const StrategyChecklist = ({ userId, date }: StrategyChecklistProps) => {
 
   const handleDeleteStrategy = async () => {
     if (!selectedStrategyId) return;
+    const confirmed = window.confirm('Delete this strategy and its checklist items?');
+    if (!confirmed) return;
     await deleteStrategy(userId, selectedStrategyId);
     await loadStrategies();
     setItems([]);
@@ -275,6 +277,11 @@ const StrategyChecklist = ({ userId, date }: StrategyChecklistProps) => {
               <button className="btn btn-ghost" type="button" onClick={handleCancelBuilder}>
                 Cancel
               </button>
+              {builderMode === 'edit' ? (
+                <button className="btn btn-muted" type="button" onClick={handleDeleteStrategy}>
+                  Delete Strategy
+                </button>
+              ) : null}
               <button className="btn btn-accent" type="button" onClick={handleSaveStrategy} disabled={!builderName || builderItems.length === 0}>
                 Save Strategy
               </button>
