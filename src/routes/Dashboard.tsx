@@ -25,7 +25,7 @@ import {
 } from '../data/services/statsService';
 
 const Dashboard = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, currentAccount } = useAuth();
   const navigate = useNavigate();
   const { filters, setDateRange } = useFilters();
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -35,16 +35,16 @@ const Dashboard = () => {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
 
   const loadTrades = async () => {
-    if (!currentUser) return;
+    if (!currentUser || !currentAccount) return;
     setLoading(true);
-    const data = await getTrades(currentUser.id);
+    const data = await getTrades(currentUser.id, currentAccount.id);
     setTrades(data);
     setLoading(false);
   };
 
   useEffect(() => {
     loadTrades();
-  }, [currentUser?.id]);
+  }, [currentUser?.id, currentAccount?.id]);
 
   const summary = useMemo(() => getDashboardSummary(trades, filters), [trades, filters]);
   const equityCurve = useMemo(() => getEquityCurveDaily(trades, filters), [trades, filters]);
@@ -69,14 +69,14 @@ const Dashboard = () => {
   }, [filteredTrades]);
 
   const handleCreateTrade = async (values: TradeFormValues) => {
-    if (!currentUser) return;
-    await createTrade(currentUser.id, values);
+    if (!currentUser || !currentAccount) return;
+    await createTrade(currentUser.id, currentAccount.id, values);
     await loadTrades();
   };
 
   const handleUpdateTrade = async (values: TradeFormValues) => {
-    if (!currentUser || !editingTrade) return;
-    await updateTrade(currentUser.id, editingTrade.id, values);
+    if (!currentUser || !currentAccount || !editingTrade) return;
+    await updateTrade(currentUser.id, currentAccount.id, editingTrade.id, values);
     await loadTrades();
   };
 

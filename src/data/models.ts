@@ -5,6 +5,14 @@ export interface User {
   updatedAt: string;
 }
 
+export interface TradingAccount {
+  id: string;
+  userId: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type TradeSide = 'LONG' | 'SHORT';
 export type TradeResult = 'WIN' | 'LOSS' | 'BREAKEVEN';
 

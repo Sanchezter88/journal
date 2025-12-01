@@ -11,10 +11,11 @@ import { getChecklistStates, setChecklistState } from '../data/repositories/stra
 
 interface StrategyChecklistProps {
   userId: string;
+  accountId: string;
   date: string;
 }
 
-const StrategyChecklist = ({ userId, date }: StrategyChecklistProps) => {
+const StrategyChecklist = ({ userId, accountId, date }: StrategyChecklistProps) => {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(null);
   const [items, setItems] = useState<StrategyItem[]>([]);
@@ -26,7 +27,12 @@ const StrategyChecklist = ({ userId, date }: StrategyChecklistProps) => {
   const [builderVisible, setBuilderVisible] = useState(false);
 
   const loadStrategies = async () => {
-    const list = await getStrategies(userId);
+    if (!accountId) {
+      setStrategies([]);
+      setSelectedStrategyId(null);
+      return;
+    }
+    const list = await getStrategies(userId, accountId);
     setStrategies(list);
     if (list.length === 0) {
       setSelectedStrategyId(null);
@@ -43,12 +49,20 @@ const StrategyChecklist = ({ userId, date }: StrategyChecklistProps) => {
   };
 
   const loadItems = async (strategyId: string) => {
-    const result = await getStrategyItems(userId, strategyId);
+    if (!accountId) {
+      setItems([]);
+      return;
+    }
+    const result = await getStrategyItems(userId, accountId, strategyId);
     setItems(result);
   };
 
   const loadChecklist = async () => {
-    const states = await getChecklistStates(userId, date);
+    if (!accountId) {
+      setStateMap({});
+      return;
+    }
+    const states = await getChecklistStates(userId, accountId, date);
     const map: Record<string, boolean> = {};
     states.forEach((state) => {
       map[state.itemId] = state.checked;
@@ -58,7 +72,7 @@ const StrategyChecklist = ({ userId, date }: StrategyChecklistProps) => {
 
   useEffect(() => {
     loadStrategies();
-  }, [userId]);
+  }, [userId, accountId]);
 
   useEffect(() => {
     if (selectedStrategyId) {
@@ -66,16 +80,17 @@ const StrategyChecklist = ({ userId, date }: StrategyChecklistProps) => {
     } else {
       setItems([]);
     }
-  }, [selectedStrategyId]);
+  }, [selectedStrategyId, accountId]);
 
   useEffect(() => {
     loadChecklist();
-  }, [userId, date]);
+  }, [userId, accountId, date]);
 
   const handleToggle = async (itemId: string, checked: boolean) => {
     if (!selectedStrategyId) return;
     setStateMap((prev) => ({ ...prev, [itemId]: checked }));
-    await setChecklistState(userId, date, selectedStrategyId, itemId, checked);
+    if (!accountId) return;
+    await setChecklistState(userId, accountId, date, selectedStrategyId, itemId, checked);
   };
 
   const beginCreate = () => {
@@ -112,7 +127,8 @@ const StrategyChecklist = ({ userId, date }: StrategyChecklistProps) => {
       name: builderName,
       items: builderItems.map((item, index) => ({ id: item.id, text: item.text, orderIndex: index })),
     };
-    const { strategy } = await createOrUpdateStrategy(userId, payload);
+    if (!accountId) return;
+    const { strategy } = await createOrUpdateStrategy(userId, accountId, payload);
     await loadStrategies();
     setSelectedStrategyId(strategy.id);
     handleCancelBuilder();
@@ -122,7 +138,8 @@ const StrategyChecklist = ({ userId, date }: StrategyChecklistProps) => {
     if (!selectedStrategyId) return;
     const confirmed = window.confirm('Delete this strategy and its checklist items?');
     if (!confirmed) return;
-    await deleteStrategy(userId, selectedStrategyId);
+    if (!accountId) return;
+    await deleteStrategy(userId, accountId, selectedStrategyId);
     await loadStrategies();
     setItems([]);
     if (editingStrategyId === selectedStrategyId) {

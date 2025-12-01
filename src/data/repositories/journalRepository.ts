@@ -1,26 +1,28 @@
 import { v4 as uuid } from 'uuid';
 import type { JournalEntry } from '../models';
-import { buildUserKey, loadAll, saveAll } from '../storage/localStorageClient';
+import { buildAccountKey, loadAccountCollection, saveAll } from '../storage/localStorageClient';
 
 const RESOURCE = 'journalEntries';
 
-const getKey = (userId: string) => buildUserKey(userId, RESOURCE);
+const getKey = (userId: string, accountId: string) => buildAccountKey(userId, accountId, RESOURCE);
 
 export const getJournalEntry = async (
   userId: string,
+  accountId: string,
   date: string
 ): Promise<JournalEntry | null> => {
-  const entries = loadAll<JournalEntry>(getKey(userId));
+  const entries = loadAccountCollection<JournalEntry>(userId, accountId, RESOURCE);
   return entries.find((entry) => entry.date === date) ?? null;
 };
 
 export const upsertJournalEntry = async (
   userId: string,
+  accountId: string,
   date: string,
   notes: string
 ): Promise<JournalEntry> => {
-  const key = getKey(userId);
-  const entries = loadAll<JournalEntry>(key);
+  const key = getKey(userId, accountId);
+  const entries = loadAccountCollection<JournalEntry>(userId, accountId, RESOURCE);
   const now = new Date().toISOString();
   const existing = entries.find((entry) => entry.date === date);
   let nextEntry: JournalEntry;

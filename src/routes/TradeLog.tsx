@@ -13,7 +13,7 @@ import { Area, AreaChart, ResponsiveContainer } from 'recharts';
 const PAGE_SIZE = 20;
 
 const TradeLog = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, currentAccount } = useAuth();
   const { filters } = useFilters();
   const navigate = useNavigate();
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -24,16 +24,16 @@ const TradeLog = () => {
   const [page, setPage] = useState(1);
 
   const loadTrades = async () => {
-    if (!currentUser) return;
+    if (!currentUser || !currentAccount) return;
     setLoading(true);
-    const data = await getTrades(currentUser.id);
+    const data = await getTrades(currentUser.id, currentAccount.id);
     setTrades(data);
     setLoading(false);
   };
 
   useEffect(() => {
     loadTrades();
-  }, [currentUser?.id]);
+  }, [currentUser?.id, currentAccount?.id]);
 
   const summary = useMemo(() => getDashboardSummary(trades, filters), [trades, filters]);
   const equityCurve = useMemo(() => getEquityCurveDaily(trades, filters), [trades, filters]);
@@ -62,19 +62,19 @@ const TradeLog = () => {
   const totalPages = Math.max(1, Math.ceil(searchedTrades.length / PAGE_SIZE));
 
   const handleDeleteTrade = async (trade: Trade) => {
-    if (!currentUser) return;
+    if (!currentUser || !currentAccount) return;
     const confirmed = window.confirm('Delete this trade?');
     if (!confirmed) return;
-    await deleteTrade(currentUser.id, trade.id);
+    await deleteTrade(currentUser.id, currentAccount.id, trade.id);
     await loadTrades();
   };
 
   const handleSubmit = async (values: TradeFormValues) => {
-    if (!currentUser) return;
+    if (!currentUser || !currentAccount) return;
     if (editingTrade) {
-      await updateTrade(currentUser.id, editingTrade.id, values);
+      await updateTrade(currentUser.id, currentAccount.id, editingTrade.id, values);
     } else {
-      await createTrade(currentUser.id, values);
+      await createTrade(currentUser.id, currentAccount.id, values);
       setPage(1);
     }
     await loadTrades();

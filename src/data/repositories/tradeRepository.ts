@@ -1,10 +1,10 @@
 import { v4 as uuid } from 'uuid';
 import type { Trade } from '../models';
-import { buildUserKey, loadAll, saveAll } from '../storage/localStorageClient';
+import { buildAccountKey, loadAccountCollection, saveAll } from '../storage/localStorageClient';
 
 const RESOURCE = 'trades';
 
-const getKey = (userId: string) => buildUserKey(userId, RESOURCE);
+const getKey = (userId: string, accountId: string) => buildAccountKey(userId, accountId, RESOURCE);
 
 const sortTrades = (trades: Trade[]) =>
   [...trades].sort((a, b) => {
@@ -14,17 +14,18 @@ const sortTrades = (trades: Trade[]) =>
     return a.date.localeCompare(b.date);
   });
 
-export const getTrades = async (userId: string): Promise<Trade[]> => {
-  const trades = loadAll<Trade>(getKey(userId));
+export const getTrades = async (userId: string, accountId: string): Promise<Trade[]> => {
+  const trades = loadAccountCollection<Trade>(userId, accountId, RESOURCE);
   return sortTrades(trades);
 };
 
 export const createTrade = async (
   userId: string,
+  accountId: string,
   input: Omit<Trade, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
 ): Promise<Trade> => {
-  const key = getKey(userId);
-  const trades = loadAll<Trade>(key);
+  const key = getKey(userId, accountId);
+  const trades = loadAccountCollection<Trade>(userId, accountId, RESOURCE);
   const now = new Date().toISOString();
   const trade: Trade = {
     ...input,
@@ -40,11 +41,12 @@ export const createTrade = async (
 
 export const updateTrade = async (
   userId: string,
+  accountId: string,
   tradeId: string,
   patch: Partial<Trade>
 ): Promise<Trade> => {
-  const key = getKey(userId);
-  const trades = loadAll<Trade>(key);
+  const key = getKey(userId, accountId);
+  const trades = loadAccountCollection<Trade>(userId, accountId, RESOURCE);
   const existing = trades.find((trade) => trade.id === tradeId);
   if (!existing) {
     throw new Error('Trade not found');
@@ -55,9 +57,9 @@ export const updateTrade = async (
   return updated;
 };
 
-export const deleteTrade = async (userId: string, tradeId: string): Promise<void> => {
-  const key = getKey(userId);
-  const trades = loadAll<Trade>(key);
+export const deleteTrade = async (userId: string, accountId: string, tradeId: string): Promise<void> => {
+  const key = getKey(userId, accountId);
+  const trades = loadAccountCollection<Trade>(userId, accountId, RESOURCE);
   const nextTrades = trades.filter((trade) => trade.id !== tradeId);
   saveAll(key, nextTrades);
 };

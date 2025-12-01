@@ -1,12 +1,12 @@
 import { v4 as uuid } from 'uuid';
 import type { Strategy, StrategyItem } from '../models';
-import { buildUserKey, loadAll, saveAll } from '../storage/localStorageClient';
+import { buildAccountKey, loadAccountCollection, saveAll } from '../storage/localStorageClient';
 
 const STRATEGIES_RESOURCE = 'strategies';
 const ITEMS_RESOURCE = 'strategyItems';
 
-const getStrategiesKey = (userId: string) => buildUserKey(userId, STRATEGIES_RESOURCE);
-const getItemsKey = (userId: string) => buildUserKey(userId, ITEMS_RESOURCE);
+const getStrategiesKey = (userId: string, accountId: string) => buildAccountKey(userId, accountId, STRATEGIES_RESOURCE);
+const getItemsKey = (userId: string, accountId: string) => buildAccountKey(userId, accountId, ITEMS_RESOURCE);
 
 export type StrategyUpsertInput = {
   id?: string;
@@ -14,23 +14,28 @@ export type StrategyUpsertInput = {
   items: { id?: string; text: string; orderIndex?: number }[];
 };
 
-export const getStrategies = async (userId: string): Promise<Strategy[]> => {
-  return loadAll<Strategy>(getStrategiesKey(userId));
+export const getStrategies = async (userId: string, accountId: string): Promise<Strategy[]> => {
+  return loadAccountCollection<Strategy>(userId, accountId, STRATEGIES_RESOURCE);
 };
 
-export const getStrategyItems = async (userId: string, strategyId: string): Promise<StrategyItem[]> => {
-  const items = loadAll<StrategyItem>(getItemsKey(userId));
+export const getStrategyItems = async (
+  userId: string,
+  accountId: string,
+  strategyId: string
+): Promise<StrategyItem[]> => {
+  const items = loadAccountCollection<StrategyItem>(userId, accountId, ITEMS_RESOURCE);
   return items.filter((item) => item.strategyId === strategyId).sort((a, b) => a.orderIndex - b.orderIndex);
 };
 
 export const createOrUpdateStrategy = async (
   userId: string,
+  accountId: string,
   input: StrategyUpsertInput
 ): Promise<{ strategy: Strategy; items: StrategyItem[] }> => {
-  const strategiesKey = getStrategiesKey(userId);
-  const itemsKey = getItemsKey(userId);
-  const strategies = loadAll<Strategy>(strategiesKey);
-  const items = loadAll<StrategyItem>(itemsKey);
+  const strategiesKey = getStrategiesKey(userId, accountId);
+  const itemsKey = getItemsKey(userId, accountId);
+  const strategies = loadAccountCollection<Strategy>(userId, accountId, STRATEGIES_RESOURCE);
+  const items = loadAccountCollection<StrategyItem>(userId, accountId, ITEMS_RESOURCE);
   const now = new Date().toISOString();
 
   let strategy: Strategy;
@@ -70,11 +75,11 @@ export const createOrUpdateStrategy = async (
   return { strategy, items: normalizedItems.sort((a, b) => a.orderIndex - b.orderIndex) };
 };
 
-export const deleteStrategy = async (userId: string, strategyId: string): Promise<void> => {
-  const strategiesKey = getStrategiesKey(userId);
-  const itemsKey = getItemsKey(userId);
-  const strategies = loadAll<Strategy>(strategiesKey);
-  const items = loadAll<StrategyItem>(itemsKey);
+export const deleteStrategy = async (userId: string, accountId: string, strategyId: string): Promise<void> => {
+  const strategiesKey = getStrategiesKey(userId, accountId);
+  const itemsKey = getItemsKey(userId, accountId);
+  const strategies = loadAccountCollection<Strategy>(userId, accountId, STRATEGIES_RESOURCE);
+  const items = loadAccountCollection<StrategyItem>(userId, accountId, ITEMS_RESOURCE);
   saveAll(
     strategiesKey,
     strategies.filter((strategy) => strategy.id !== strategyId)

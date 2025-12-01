@@ -24,7 +24,7 @@ const readFileAsDataUrl = (file: File) => {
 
 const DailyJournal = () => {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser, currentAccount } = useAuth();
   const { date = '' } = useParams();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [notes, setNotes] = useState('');
@@ -41,22 +41,22 @@ const DailyJournal = () => {
   const displayDate = format(safeDate, 'EEEE, MMM d, yyyy');
 
   const loadTrades = async () => {
-    if (!currentUser) return;
+    if (!currentUser || !currentAccount) return;
     setLoading(true);
-    const allTrades = await getTrades(currentUser.id);
+    const allTrades = await getTrades(currentUser.id, currentAccount.id);
     setTrades(allTrades.filter((trade) => trade.date === date));
     setLoading(false);
   };
 
   const loadNotes = async () => {
-    if (!currentUser) return;
-    const entry = await getJournalEntry(currentUser.id, date);
+    if (!currentUser || !currentAccount) return;
+    const entry = await getJournalEntry(currentUser.id, currentAccount.id, date);
     setNotes(entry?.notes ?? '');
   };
 
   const loadScreenshots = async () => {
-    if (!currentUser) return;
-    const list = await getScreenshotsForDate(currentUser.id, date);
+    if (!currentUser || !currentAccount) return;
+    const list = await getScreenshotsForDate(currentUser.id, currentAccount.id, date);
     setScreenshots(list);
   };
 
@@ -64,29 +64,29 @@ const DailyJournal = () => {
     loadTrades();
     loadNotes();
     loadScreenshots();
-  }, [currentUser?.id, date]);
+  }, [currentUser?.id, currentAccount?.id, date]);
 
   const handleSaveNotes = async (value: string) => {
-    if (!currentUser) return;
+    if (!currentUser || !currentAccount) return;
     setNotes(value);
-    await upsertJournalEntry(currentUser.id, date, value);
+    await upsertJournalEntry(currentUser.id, currentAccount.id, date, value);
   };
 
   const handleTradeSubmit = async (values: TradeFormValues) => {
-    if (!currentUser) return;
+    if (!currentUser || !currentAccount) return;
     if (editingTrade) {
-      await updateTrade(currentUser.id, editingTrade.id, values);
+      await updateTrade(currentUser.id, currentAccount.id, editingTrade.id, values);
     } else {
-      await createTrade(currentUser.id, { ...values, date });
+      await createTrade(currentUser.id, currentAccount.id, { ...values, date });
     }
     await loadTrades();
   };
 
   const handleUploadScreenshots = async (files: FileList) => {
-    if (!currentUser) return;
+    if (!currentUser || !currentAccount) return;
     for (const file of Array.from(files)) {
       const fileUrl = await readFileAsDataUrl(file);
-      await addScreenshot(currentUser.id, {
+      await addScreenshot(currentUser.id, currentAccount.id, {
         date,
         fileUrl,
         description: file.name,
@@ -96,8 +96,8 @@ const DailyJournal = () => {
   };
 
   const handleDeleteScreenshot = async (id: string) => {
-    if (!currentUser) return;
-    await deleteScreenshot(currentUser.id, id);
+    if (!currentUser || !currentAccount) return;
+    await deleteScreenshot(currentUser.id, currentAccount.id, id);
     await loadScreenshots();
   };
 
@@ -147,7 +147,9 @@ const DailyJournal = () => {
       )}
       <JournalNotes initialNotes={notes} onSave={handleSaveNotes} />
       <ScreenshotsSection screenshots={screenshots} onUpload={handleUploadScreenshots} onDelete={handleDeleteScreenshot} />
-      {currentUser ? <StrategyChecklist userId={currentUser.id} date={date} /> : null}
+      {currentUser && currentAccount ? (
+        <StrategyChecklist userId={currentUser.id} accountId={currentAccount.id} date={date} />
+      ) : null}
       {modalOpen ? (
         <TradeModal
           mode={editingTrade ? 'edit' : 'create'}

@@ -1,28 +1,30 @@
 import { v4 as uuid } from 'uuid';
 import type { StrategyChecklistState } from '../models';
-import { buildUserKey, loadAll, saveAll } from '../storage/localStorageClient';
+import { buildAccountKey, loadAccountCollection, saveAll } from '../storage/localStorageClient';
 
 const RESOURCE = 'strategyChecklist';
 
-const getKey = (userId: string) => buildUserKey(userId, RESOURCE);
+const getKey = (userId: string, accountId: string) => buildAccountKey(userId, accountId, RESOURCE);
 
 export const getChecklistStates = async (
   userId: string,
+  accountId: string,
   date: string
 ): Promise<StrategyChecklistState[]> => {
-  const allStates = loadAll<StrategyChecklistState>(getKey(userId));
+  const allStates = loadAccountCollection<StrategyChecklistState>(userId, accountId, RESOURCE);
   return allStates.filter((state) => state.date === date);
 };
 
 export const setChecklistState = async (
   userId: string,
+  accountId: string,
   date: string,
   strategyId: string,
   itemId: string,
   checked: boolean
 ): Promise<StrategyChecklistState> => {
-  const key = getKey(userId);
-  const allStates = loadAll<StrategyChecklistState>(key);
+  const key = getKey(userId, accountId);
+  const allStates = loadAccountCollection<StrategyChecklistState>(userId, accountId, RESOURCE);
   const existing = allStates.find(
     (state) =>
       state.date === date && state.strategyId === strategyId && state.itemId === itemId && state.userId === userId
