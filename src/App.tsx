@@ -313,7 +313,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
 };
 
 function App() {
-  const { currentUser, currentAccount, loading } = useAuth();
+  const { currentUser, loading } = useAuth();
 
   if (loading) {
     return (
@@ -327,16 +327,6 @@ function App() {
 
   if (!currentUser) {
     return <LoginScreen />;
-  }
-
-  if (!currentAccount) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
-        <div className="card" style={{ textAlign: 'center' }}>
-          <p style={{ color: 'var(--color-muted)' }}>Preparing your accounts…</p>
-        </div>
-      </div>
-    );
   }
 
   return (
