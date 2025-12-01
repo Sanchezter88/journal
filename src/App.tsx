@@ -132,7 +132,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                     Switch between live and backtesting books.
                   </p>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                   {accounts.length === 0 ? (
                     <p style={{ color: 'var(--color-muted)', fontSize: '0.9rem' }}>No accounts yet.</p>
                   ) : (
@@ -158,19 +158,19 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                       );
                     })
                   )}
+                  <button
+                    className="btn btn-muted"
+                    style={{ width: '100%' }}
+                    onClick={async () => {
+                      const name = window.prompt('Account name');
+                      if (!name) return;
+                      await addAccount(name);
+                      setAccountMenuOpen(false);
+                    }}
+                  >
+                    + Add Account
+                  </button>
                 </div>
-                <button
-                  className="btn btn-muted"
-                  style={{ width: '100%' }}
-                  onClick={async () => {
-                    const name = window.prompt('Account name');
-                    if (!name) return;
-                    await addAccount(name);
-                    setAccountMenuOpen(false);
-                  }}
-                >
-                  + Add Account
-                </button>
               </div>
             ) : null}
           </div>
