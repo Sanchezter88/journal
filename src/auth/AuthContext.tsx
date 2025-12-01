@@ -148,6 +148,12 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
   }, [hydrateAccounts]);
 
   useEffect(() => {
+    if (currentUser) {
+      hydrateAccounts(currentUser);
+    }
+  }, [currentUser, hydrateAccounts]);
+
+  useEffect(() => {
     if (!currentUser) {
       setAccounts([]);
       setSelectedAccountId(null);

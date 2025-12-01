@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import LoginScreen from './components/LoginScreen';
@@ -21,10 +21,33 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [accountEditorOpen, setAccountEditorOpen] = useState(false);
+  const [accountEditorTargetId, setAccountEditorTargetId] = useState<string | null>(null);
   const [accountNameInput, setAccountNameInput] = useState('');
   const [deleteStepActive, setDeleteStepActive] = useState(false);
   const [deleteEmailValue, setDeleteEmailValue] = useState('');
   const [accountActionError, setAccountActionError] = useState('');
+  const editorAccount = accounts.find((account) => account.id === accountEditorTargetId) ?? null;
+
+  useEffect(() => {
+    if (editorAccount) {
+      setAccountNameInput(editorAccount.name);
+    }
+  }, [editorAccount]);
+
+  const closeAccountEditor = () => {
+    setAccountEditorOpen(false);
+    setAccountEditorTargetId(null);
+    setAccountNameInput('');
+    setDeleteStepActive(false);
+    setDeleteEmailValue('');
+    setAccountActionError('');
+  };
+
+  useEffect(() => {
+    if (accountEditorOpen && !editorAccount) {
+      closeAccountEditor();
+    }
+  }, [accountEditorOpen, editorAccount]);
 
   const navItems = [
     { label: 'Dashboard', path: '/' },
@@ -116,29 +139,46 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                     accounts.map((account) => {
                       const isActive = account.id === currentAccount?.id;
                       return (
-                        <button
-                          key={account.id}
-                          className="btn btn-ghost"
-                          style={{
-                            justifyContent: 'space-between',
-                            background: isActive ? 'var(--color-accent)' : 'rgba(148,163,184,0.12)',
-                            color: isActive ? '#0f172a' : 'var(--color-text)',
-                            fontWeight: isActive ? 700 : 500,
-                          }}
-                          onClick={() => {
-                            selectAccount(account.id);
-                            setAccountMenuOpen(false);
-                          }}
-                        >
-                          {account.name}
-                          {isActive ? <span>Active</span> : null}
-                        </button>
+                        <div key={account.id} style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                          <button
+                            className="btn btn-ghost"
+                            style={{
+                              justifyContent: 'flex-start',
+                              flex: 1,
+                              background: isActive ? 'var(--color-accent)' : 'rgba(148,163,184,0.12)',
+                              color: isActive ? '#0f172a' : 'var(--color-text)',
+                              fontWeight: isActive ? 700 : 500,
+                            }}
+                            onClick={() => {
+                              selectAccount(account.id);
+                              setAccountMenuOpen(false);
+                            }}
+                          >
+                            {account.name}
+                          </button>
+                          <button
+                            className="btn btn-ghost"
+                            aria-label={`Edit ${account.name}`}
+                            onClick={() => {
+                              setAccountNameInput(account.name);
+                              setDeleteStepActive(false);
+                              setDeleteEmailValue('');
+                              setAccountActionError('');
+                              setAccountEditorTargetId(account.id);
+                              setAccountEditorOpen(true);
+                              setAccountMenuOpen(false);
+                            }}
+                          >
+                            ✎
+                          </button>
+                        </div>
                       );
                     })
                   )}
                 </div>
                 <button
                   className="btn btn-muted"
+                  style={{ width: '100%' }}
                   onClick={async () => {
                     const name = window.prompt('Account name');
                     if (!name) return;
@@ -152,22 +192,6 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
             ) : null}
           </div>
           <button
-            className="btn btn-ghost"
-            onClick={() => {
-              if (!currentAccount) return;
-              setAccountNameInput(currentAccount.name);
-              setDeleteStepActive(false);
-              setDeleteEmailValue('');
-              setAccountActionError('');
-              setAccountEditorOpen(true);
-              setAccountMenuOpen(false);
-            }}
-            disabled={!currentAccount}
-            aria-label="Edit account"
-          >
-            ✎
-          </button>
-          <button
             className="btn btn-muted"
             onClick={async () => {
               await logout();
@@ -179,8 +203,8 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
         </div>
       </header>
       <main className="app-main">{children}</main>
-      {accountEditorOpen ? (
-        <div className="modal-overlay" onClick={() => setAccountEditorOpen(false)}>
+      {accountEditorOpen && editorAccount ? (
+        <div className="modal-overlay" onClick={closeAccountEditor}>
           <div className="modal-container" style={{ maxWidth: '400px' }} onClick={(event) => event.stopPropagation()}>
             <h3 style={{ marginBottom: '0.5rem' }}>Edit account</h3>
             <p style={{ color: 'var(--color-muted)', fontSize: '0.9rem', marginBottom: '0.75rem' }}>
@@ -199,30 +223,21 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
               />
             </label>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-              <button
-                className="btn btn-muted"
-                type="button"
-                onClick={() => {
-                  setAccountEditorOpen(false);
-                  setAccountActionError('');
-                  setDeleteStepActive(false);
-                  setDeleteEmailValue('');
-                }}
-              >
+              <button className="btn btn-muted" type="button" onClick={closeAccountEditor}>
                 Cancel
               </button>
               <button
                 className="btn btn-accent"
                 type="button"
                 onClick={async () => {
-                  if (!currentAccount) return;
+                  if (!editorAccount) return;
                   const trimmed = accountNameInput.trim();
                   if (!trimmed) {
                     setAccountActionError('Name is required.');
                     return;
                   }
-                  await renameAccount(currentAccount.id, trimmed);
-                  setAccountEditorOpen(false);
+                  await renameAccount(editorAccount.id, trimmed);
+                  closeAccountEditor();
                 }}
               >
                 Save Name
@@ -246,6 +261,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                 <button
                   className="btn btn-ghost"
                   style={{ color: 'var(--color-danger, #ef4444)' }}
+                  disabled={accounts.length <= 1}
                   onClick={() => {
                     setDeleteStepActive(true);
                     setAccountActionError('');
@@ -283,14 +299,14 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                       style={{ background: 'var(--color-danger, #ef4444)', color: '#fff' }}
                       type="button"
                       onClick={async () => {
-                        if (!currentAccount) return;
+                        if (!editorAccount) return;
                         if (deleteEmailValue.trim().toLowerCase() !== (currentUser?.email ?? '').toLowerCase()) {
                           setAccountActionError('Email must match your login email.');
                           return;
                         }
                         try {
-                          await deleteAccount(currentAccount.id);
-                          setAccountEditorOpen(false);
+                          await deleteAccount(editorAccount.id);
+                          closeAccountEditor();
                         } catch (error) {
                           setAccountActionError(error instanceof Error ? error.message : 'Unable to delete account.');
                         }
