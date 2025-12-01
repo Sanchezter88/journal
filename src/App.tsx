@@ -161,6 +161,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                 </div>
                 <button
                   className="btn btn-muted"
+                  style={{ width: '100%' }}
                   onClick={async () => {
                     const name = window.prompt('Account name');
                     if (!name) return;
