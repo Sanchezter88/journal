@@ -132,7 +132,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                     Switch between live and backtesting books.
                   </p>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {accounts.length === 0 ? (
                     <p style={{ color: 'var(--color-muted)', fontSize: '0.9rem' }}>No accounts yet.</p>
                   ) : (
