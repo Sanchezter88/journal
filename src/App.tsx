@@ -139,46 +139,28 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                     accounts.map((account) => {
                       const isActive = account.id === currentAccount?.id;
                       return (
-                        <div key={account.id} style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
-                          <button
-                            className="btn btn-ghost"
-                            style={{
-                              justifyContent: 'flex-start',
-                              flex: 1,
-                              background: isActive ? 'var(--color-accent)' : 'rgba(148,163,184,0.12)',
-                              color: isActive ? '#0f172a' : 'var(--color-text)',
-                              fontWeight: isActive ? 700 : 500,
-                            }}
-                            onClick={() => {
-                              selectAccount(account.id);
-                              setAccountMenuOpen(false);
-                            }}
-                          >
-                            {account.name}
-                          </button>
-                          <button
-                            className="btn btn-ghost"
-                            aria-label={`Edit ${account.name}`}
-                            onClick={() => {
-                              setAccountNameInput(account.name);
-                              setDeleteStepActive(false);
-                              setDeleteEmailValue('');
-                              setAccountActionError('');
-                              setAccountEditorTargetId(account.id);
-                              setAccountEditorOpen(true);
-                              setAccountMenuOpen(false);
-                            }}
-                          >
-                            ✎
-                          </button>
-                        </div>
+                        <button
+                          key={account.id}
+                          className="btn btn-ghost"
+                          style={{
+                            justifyContent: 'flex-start',
+                            background: isActive ? 'var(--color-accent)' : 'rgba(148,163,184,0.12)',
+                            color: isActive ? '#0f172a' : 'var(--color-text)',
+                            fontWeight: isActive ? 700 : 500,
+                          }}
+                          onClick={() => {
+                            selectAccount(account.id);
+                            setAccountMenuOpen(false);
+                          }}
+                        >
+                          {account.name}
+                        </button>
                       );
                     })
                   )}
                 </div>
                 <button
                   className="btn btn-muted"
-                  style={{ width: '100%' }}
                   onClick={async () => {
                     const name = window.prompt('Account name');
                     if (!name) return;
@@ -191,6 +173,23 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
               </div>
             ) : null}
           </div>
+          <button
+            className="btn btn-ghost"
+            onClick={() => {
+              if (!currentAccount) return;
+              setAccountNameInput(currentAccount.name);
+              setAccountEditorTargetId(currentAccount.id);
+              setDeleteStepActive(false);
+              setDeleteEmailValue('');
+              setAccountActionError('');
+              setAccountEditorOpen(true);
+              setAccountMenuOpen(false);
+            }}
+            disabled={!currentAccount}
+            aria-label="Edit account"
+          >
+            ✎
+          </button>
           <button
             className="btn btn-muted"
             onClick={async () => {
