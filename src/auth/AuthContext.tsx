@@ -154,10 +154,25 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({ children }) =>
     }
   }, [currentUser]);
 
-  const currentAccount = useMemo(
-    () => accounts.find((account) => account.id === selectedAccountId) ?? null,
-    [accounts, selectedAccountId]
-  );
+  const currentAccount = useMemo(() => {
+    if (accounts.length === 0) return null;
+    if (selectedAccountId) {
+      const match = accounts.find((account) => account.id === selectedAccountId);
+      if (match) return match;
+    }
+    return accounts[0];
+  }, [accounts, selectedAccountId]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    if (accounts.length === 0) return;
+    if (selectedAccountId) return;
+    const fallbackId = accounts[0]?.id;
+    if (fallbackId) {
+      setSelectedAccountId(fallbackId);
+      persistSelectedAccountId(currentUser.id, fallbackId);
+    }
+  }, [accounts, selectedAccountId, currentUser]);
 
   const upsertUser = async (email: string): Promise<User> => {
     const now = new Date().toISOString();
