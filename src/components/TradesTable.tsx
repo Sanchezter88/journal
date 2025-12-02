@@ -38,8 +38,9 @@ const TradesTable = ({ trades, onEdit, onDelete, onViewDay, showDate = true }: T
                   {showDate && <td>{trade.date}</td>}
                   <td>{trade.time}</td>
                   <td>
-                    <span className="accent-chip" style={{ background: 'rgba(56,189,248,0.12)' }}>
-                      {trade.instrument}
+                    <span className="accent-chip" style={{ background: 'rgba(56,189,248,0.12)', display: 'inline-flex', gap: '0.35rem' }}>
+                      <span>{trade.instrument}</span>
+                      <span style={{ color: 'var(--color-muted)', fontWeight: 500 }}>{`${trade.contracts ?? 1}x`}</span>
                     </span>
                   </td>
                   <td>
