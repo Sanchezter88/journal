@@ -47,7 +47,15 @@ const ScreenshotsSection = ({ screenshots, onUpload, onDelete }: ScreenshotsSect
               <img
                 src={shot.fileUrl}
                 alt={shot.description ?? 'Screenshot'}
-                style={{ width: '100%', height: '120px', objectFit: 'cover', cursor: 'pointer' }}
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  maxHeight: '320px',
+                  objectFit: 'contain',
+                  cursor: 'pointer',
+                  display: 'block',
+                  background: 'rgba(15,23,42,0.35)'
+                }}
                 onClick={() => setPreview(shot)}
               />
               <button
