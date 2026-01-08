@@ -12,6 +12,7 @@ import { createTrade, getTrades, updateTrade } from '../data/repositories/tradeR
 import { getJournalEntry, upsertJournalEntry } from '../data/repositories/journalRepository';
 import { addScreenshot, deleteScreenshot, getScreenshotsForDate } from '../data/repositories/screenshotRepository';
 import { addDays, format, formatISO, isAfter, parseISO } from 'date-fns';
+import { getSessionDate } from '../utils/tradingDay';
 
 const readFileAsDataUrl = (file: File) => {
   return new Promise<string>((resolve, reject) => {
@@ -44,7 +45,7 @@ const DailyJournal = () => {
     if (!currentUser || !currentAccount) return;
     setLoading(true);
     const allTrades = await getTrades(currentUser.id, currentAccount.id);
-    setTrades(allTrades.filter((trade) => trade.date === date));
+    setTrades(allTrades.filter((trade) => getSessionDate(trade.date, trade.time) === date));
     setLoading(false);
   };
 

@@ -23,6 +23,7 @@ import {
   getWinRateByDayOfWeek,
   getWinRateByTimeBucket,
 } from '../data/services/statsService';
+import { getSessionDate } from '../utils/tradingDay';
 
 const Dashboard = () => {
   const { currentUser, currentAccount } = useAuth();
@@ -58,12 +59,13 @@ const Dashboard = () => {
   const dayData = useMemo(() => {
     const map: Record<string, { date: string; winCount: number; lossCount: number; pnl: number }> = {};
     filteredTrades.forEach((trade) => {
-      if (!map[trade.date]) {
-        map[trade.date] = { date: trade.date, winCount: 0, lossCount: 0, pnl: 0 };
+      const sessionDate = getSessionDate(trade.date, trade.time);
+      if (!map[sessionDate]) {
+        map[sessionDate] = { date: sessionDate, winCount: 0, lossCount: 0, pnl: 0 };
       }
-      if (trade.result === 'WIN') map[trade.date].winCount += 1;
-      if (trade.result === 'LOSS') map[trade.date].lossCount += 1;
-      map[trade.date].pnl += trade.pnl;
+      if (trade.result === 'WIN') map[sessionDate].winCount += 1;
+      if (trade.result === 'LOSS') map[sessionDate].lossCount += 1;
+      map[sessionDate].pnl += trade.pnl;
     });
     return map;
   }, [filteredTrades]);

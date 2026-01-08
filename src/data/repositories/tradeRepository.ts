@@ -1,6 +1,7 @@
 import { v4 as uuid } from 'uuid';
 import type { Trade } from '../models';
 import { buildAccountKey, loadAccountCollection, saveAll } from '../storage/localStorageClient';
+import { getSessionDate } from '../../utils/tradingDay';
 
 const RESOURCE = 'trades';
 
@@ -8,10 +9,12 @@ const getKey = (userId: string, accountId: string) => buildAccountKey(userId, ac
 
 const sortTrades = (trades: Trade[]) =>
   [...trades].sort((a, b) => {
-    if (a.date === b.date) {
+    const sessionA = getSessionDate(a.date, a.time);
+    const sessionB = getSessionDate(b.date, b.time);
+    if (sessionA === sessionB) {
       return a.time.localeCompare(b.time);
     }
-    return a.date.localeCompare(b.date);
+    return sessionA.localeCompare(sessionB);
   });
 
 export const getTrades = async (userId: string, accountId: string): Promise<Trade[]> => {

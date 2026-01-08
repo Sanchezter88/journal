@@ -9,6 +9,7 @@ import type {
   Trade,
   WinRatePoint,
 } from '../models';
+import { getSessionDate } from '../../utils/tradingDay';
 
 const TIME_BUCKETS = [
   { key: '0930_0945', label: '9:30-9:45', start: 9 * 60 + 30, end: 9 * 60 + 45 },
@@ -83,11 +84,12 @@ const getDayCode = (dateStr: string): DayOfWeekFilter | 'WEEKEND' => {
 export const filterTrades = (trades: Trade[], filters: FiltersState): Trade[] => {
   const today = todayIso();
   return trades.filter((trade) => {
-    if (trade.date > today) return false;
+    const sessionDate = getSessionDate(trade.date, trade.time);
+    if (sessionDate > today) return false;
     const { dateRange, timeRange, dayOfWeek, instrument } = filters;
 
-    if (dateRange.start && trade.date < dateRange.start) return false;
-    if (dateRange.end && trade.date > dateRange.end) return false;
+    if (dateRange.start && sessionDate < dateRange.start) return false;
+    if (dateRange.end && sessionDate > dateRange.end) return false;
 
     if (instrument !== 'ALL' && trade.instrument !== instrument) return false;
 
@@ -102,7 +104,7 @@ export const filterTrades = (trades: Trade[], filters: FiltersState): Trade[] =>
     }
 
     if (dayOfWeek !== 'ALL') {
-      const tradeDay = getDayCode(trade.date);
+      const tradeDay = getDayCode(sessionDate);
       if (tradeDay !== dayOfWeek) return false;
     }
 
@@ -164,7 +166,8 @@ export const getDashboardSummary = (trades: Trade[], filters: FiltersState): Das
 const groupByDate = (trades: Trade[]) => {
   const map = new Map<string, number>();
   trades.forEach((trade) => {
-    map.set(trade.date, (map.get(trade.date) ?? 0) + trade.pnl);
+    const sessionDate = getSessionDate(trade.date, trade.time);
+    map.set(sessionDate, (map.get(sessionDate) ?? 0) + trade.pnl);
   });
   return map;
 };
@@ -172,7 +175,7 @@ const groupByDate = (trades: Trade[]) => {
 export const getEquityCurveDaily = (trades: Trade[], filters: FiltersState): EquityCurvePoint[] => {
   const filtered = filterTrades(trades, filters);
   const grouped = groupByDate(filtered);
-  const tradeDates = Array.from(new Set(filtered.map((trade) => trade.date))).sort();
+  const tradeDates = Array.from(new Set(filtered.map((trade) => getSessionDate(trade.date, trade.time)))).sort();
   const days = buildContinuousDates(filters, tradeDates);
   if (days.length === 0) return [];
   let cumulative = 0;
@@ -185,7 +188,7 @@ export const getEquityCurveDaily = (trades: Trade[], filters: FiltersState): Equ
 export const getDailyPnl = (trades: Trade[], filters: FiltersState): DailyPnlPoint[] => {
   const filtered = filterTrades(trades, filters);
   const grouped = groupByDate(filtered);
-  const tradeDates = Array.from(new Set(filtered.map((trade) => trade.date))).sort();
+  const tradeDates = Array.from(new Set(filtered.map((trade) => getSessionDate(trade.date, trade.time)))).sort();
   const days = buildContinuousDates(filters, tradeDates);
   if (days.length === 0) return [];
   return days.map((date) => {
@@ -235,7 +238,7 @@ export const getAvgPnlByTimeBucket = (trades: Trade[], filters: FiltersState): A
 const aggregateByDay = (trades: Trade[]) => {
   const map = new Map<Weekday, Trade[]>();
   trades.forEach((trade) => {
-    const day = getDayCode(trade.date);
+    const day = getDayCode(getSessionDate(trade.date, trade.time));
     if (day === 'WEEKEND') return;
     const arr = map.get(day as Weekday) ?? [];
     arr.push(trade);
