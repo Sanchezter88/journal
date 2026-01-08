@@ -9,7 +9,7 @@ import type {
   Trade,
   WinRatePoint,
 } from '../models';
-import { getSessionDate } from '../../utils/tradingDay';
+import { getSessionDate, getCurrentSessionDate } from '../../utils/tradingDay';
 
 const TIME_BUCKETS = [
   { key: '0930_0945', label: '9:30-9:45', start: 9 * 60 + 30, end: 9 * 60 + 45 },
@@ -29,7 +29,7 @@ const DAY_LABELS: Record<Weekday, string> = {
   FRI: 'Friday',
 };
 
-const todayIso = () => formatISO(new Date(), { representation: 'date' });
+const todayIso = () => getCurrentSessionDate();
 
 const toIsoDate = (date: Date) => formatISO(date, { representation: 'date' });
 

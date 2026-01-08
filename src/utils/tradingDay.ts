@@ -29,3 +29,14 @@ export const getSessionDate = (dateStr: string, timeStr?: string) => {
   }
   return dateStr;
 };
+
+const formatIsoDate = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+
+const formatTime = (date: Date) => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+
+export const getCurrentSessionDate = () => {
+  const now = new Date();
+  const isoDate = formatIsoDate(now);
+  const time = formatTime(now);
+  return getSessionDate(isoDate, time);
+};

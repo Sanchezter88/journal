@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { TradeResult, TradeSide } from '../data/models';
+import { getCurrentSessionDate } from '../utils/tradingDay';
 
 export interface TradeFormValues {
   date: string;
@@ -34,8 +35,10 @@ interface TradeModalProps {
 const instrumentOptions = ['NQ', 'ES', 'MNQ', 'MES', 'CL', 'GC', 'Other'];
 
 const TradeModal = ({ mode, initialValues, onClose, onSubmit }: TradeModalProps) => {
+  const sessionToday = getCurrentSessionDate();
+
   const buildInitialState = (): TradeFormState => ({
-    date: initialValues?.date ?? new Date().toISOString().slice(0, 10),
+    date: initialValues?.date ?? sessionToday,
     time: initialValues?.time ?? '09:30',
     contracts: initialValues?.contracts ?? 1,
     side: (initialValues?.side as TradeSide) ?? 'LONG',
@@ -158,7 +161,7 @@ const TradeModal = ({ mode, initialValues, onClose, onSubmit }: TradeModalProps)
               <input
                 type="date"
                 className="input"
-                max={new Date().toISOString().slice(0, 10)}
+                max={sessionToday}
                 value={form.date}
                 onChange={(event) => handleFieldChange('date', event.target.value)}
                 required

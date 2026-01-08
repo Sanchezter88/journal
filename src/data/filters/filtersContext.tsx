@@ -1,18 +1,18 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
-import { addDays, formatISO } from 'date-fns';
+import { addDays, formatISO, parseISO } from 'date-fns';
 import type { DayOfWeekFilter, DateRange, FiltersState, TimeRangeOption } from '../models';
+import { getCurrentSessionDate } from '../../utils/tradingDay';
 
-const today = new Date();
-const thirtyDaysAgo = addDays(today, -30);
-
-const defaultFilters: FiltersState = {
-  dateRange: {
-    start: formatISO(thirtyDaysAgo, { representation: 'date' }),
-    end: formatISO(today, { representation: 'date' }),
-  },
-  timeRange: 'ALL',
-  dayOfWeek: 'ALL',
-  instrument: 'ALL',
+const buildDefaultFilters = (): FiltersState => {
+  const sessionTodayIso = getCurrentSessionDate();
+  const sessionToday = parseISO(sessionTodayIso);
+  const start = formatISO(addDays(sessionToday, -30), { representation: 'date' });
+  return {
+    dateRange: { start, end: sessionTodayIso },
+    timeRange: 'ALL',
+    dayOfWeek: 'ALL',
+    instrument: 'ALL',
+  };
 };
 
 type FiltersContextValue = {
@@ -27,7 +27,7 @@ type FiltersContextValue = {
 const FiltersContext = createContext<FiltersContextValue | undefined>(undefined);
 
 export const FiltersProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
-  const [filters, setFilters] = useState<FiltersState>(defaultFilters);
+  const [filters, setFilters] = useState<FiltersState>(() => buildDefaultFilters());
 
   const value = useMemo<FiltersContextValue>(
     () => ({
@@ -36,7 +36,7 @@ export const FiltersProvider: React.FC<React.PropsWithChildren> = ({ children })
       setTimeRange: (timeRange) => setFilters((prev) => ({ ...prev, timeRange })),
       setDayOfWeek: (dayOfWeek) => setFilters((prev) => ({ ...prev, dayOfWeek })),
       setInstrument: (instrument) => setFilters((prev) => ({ ...prev, instrument })),
-      resetFilters: () => setFilters(defaultFilters),
+      resetFilters: () => setFilters(buildDefaultFilters()),
     }),
     [filters]
   );

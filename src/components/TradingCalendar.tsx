@@ -1,6 +1,7 @@
-import { addDays, addMonths, endOfMonth, endOfWeek, format, isAfter, startOfMonth, startOfWeek } from 'date-fns';
+import { addDays, addMonths, endOfMonth, endOfWeek, format, isAfter, parseISO, startOfMonth, startOfWeek } from 'date-fns';
 import { useMemo, useState } from 'react';
 import type { DateRange } from '../data/models';
+import { getCurrentSessionDate } from '../utils/tradingDay';
 
 interface CalendarDayData {
   date: string;
@@ -14,8 +15,6 @@ interface TradingCalendarProps {
   dayData: Record<string, CalendarDayData>;
   onSelectDate: (date: string) => void;
 }
-
-const today = new Date();
 
 const buildWeeks = (month: Date) => {
   const start = startOfWeek(startOfMonth(month), { weekStartsOn: 0 });
@@ -34,7 +33,9 @@ const buildWeeks = (month: Date) => {
 };
 
 const TradingCalendar = ({ dateRange, dayData, onSelectDate }: TradingCalendarProps) => {
+  const today = parseISO(getCurrentSessionDate());
   const [month, setMonth] = useState(startOfMonth(today));
+
 
   const weeks = useMemo(() => buildWeeks(month), [month]);
 

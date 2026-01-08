@@ -23,7 +23,7 @@ import {
   getWinRateByDayOfWeek,
   getWinRateByTimeBucket,
 } from '../data/services/statsService';
-import { getSessionDate } from '../utils/tradingDay';
+import { getSessionDate, getCurrentSessionDate } from '../utils/tradingDay';
 
 const Dashboard = () => {
   const { currentUser, currentAccount } = useAuth();
@@ -132,7 +132,7 @@ const Dashboard = () => {
                   riskRewardR: editingTrade.riskRewardR,
                   pnl: editingTrade.pnl,
                 }
-              : { date: filters.dateRange.end ?? new Date().toISOString().slice(0, 10) }
+              : { date: filters.dateRange.end ?? getCurrentSessionDate() }
           }
           onClose={() => setModalOpen(false)}
           onSubmit={modalMode === 'create' ? handleCreateTrade : handleUpdateTrade}

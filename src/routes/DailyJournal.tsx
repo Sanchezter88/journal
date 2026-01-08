@@ -12,7 +12,7 @@ import { createTrade, getTrades, updateTrade } from '../data/repositories/tradeR
 import { getJournalEntry, upsertJournalEntry } from '../data/repositories/journalRepository';
 import { addScreenshot, deleteScreenshot, getScreenshotsForDate } from '../data/repositories/screenshotRepository';
 import { addDays, format, formatISO, isAfter, parseISO } from 'date-fns';
-import { getSessionDate } from '../utils/tradingDay';
+import { getSessionDate, getCurrentSessionDate } from '../utils/tradingDay';
 
 const readFileAsDataUrl = (file: File) => {
   return new Promise<string>((resolve, reject) => {
@@ -33,7 +33,7 @@ const DailyJournal = () => {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
-  const today = new Date();
+  const today = parseISO(getCurrentSessionDate());
   const parsedDate = date ? parseISO(date) : new Date();
   const safeDate = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
   const previousDate = formatISO(addDays(safeDate, -1), { representation: 'date' });

@@ -16,6 +16,7 @@ import {
   startOfWeek,
 } from 'date-fns';
 import type { DateRange } from '../data/models';
+import { getCurrentSessionDate } from '../utils/tradingDay';
 
 interface DateRangePickerProps {
   initialRange: DateRange;
@@ -26,7 +27,7 @@ interface DateRangePickerProps {
 type RangeState = { start: Date | null; end: Date | null };
 type Preset = { label: string; getRange: () => RangeState };
 
-const startOfToday = () => startOfDay(new Date());
+const startOfToday = () => startOfDay(parseISO(getCurrentSessionDate()));
 
 const clampToToday = (date: Date | null, today: Date) => {
   if (!date) return null;
